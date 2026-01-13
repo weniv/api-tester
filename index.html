@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="style.css" />
+        <script src="app.js" defer></script>
+        <title>API 테스터</title>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🧪 API 테스터</h1>
+
+            <!-- 테스트 입력 섹션 -->
+            <div class="section">
+                <h2>🚀 테스트 실행</h2>
+
+                <div class="input-group">
+                    <input type="text" id="baseUrl" placeholder="Base URL (예: http://localhost:8000)" value="http://localhost:8000" />
+                    <input type="text" id="authToken" placeholder="Authorization Token (선택)" />
+                </div>
+
+                <div class="input-group">
+                    <select id="testMethod" class="method-select">
+                        <option value="GET">GET</option>
+                        <option value="POST" selected>POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="testEndpoint" placeholder="Endpoint (예: /accounts/register/)" oninput="onEndpointInput()" />
+                    <input type="number" id="testExpectedStatus" placeholder="예상 상태코드" value="200" style="width: 100px" />
+                </div>
+
+                <div class="suggestion" style="margin-bottom: 10px">
+                    <input type="text" id="testName" placeholder="테스트 이름 (예: 회원가입 - 정상)" style="width: 100%" onfocus="showNameSuggestions()" oninput="filterNameSuggestions()" />
+                    <div class="suggestion-list" id="nameSuggestions"></div>
+                </div>
+
+                <div style="margin-bottom: 10px">
+                    <label>Request Headers (JSON, 선택) - Content-Type은 기본 포함</label>
+                    <textarea id="testHeaders" placeholder='{"X-Custom-Header": "value"}' style="min-height: 50px"></textarea>
+                </div>
+
+                <div style="margin-bottom: 10px">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="testBody" placeholder='{"email": "test@example.com", "password": "password123"}'></textarea>
+                </div>
+
+                <div style="margin-bottom: 15px">
+                    <label>Expected Response (검증할 필드, 선택)</label>
+                    <textarea id="testExpectedResponse" placeholder='{"detail": null}'></textarea>
+                </div>
+
+                <button onclick="runTest()" id="runBtn" style="width: 100%; padding: 15px">🚀 테스트 실행</button>
+            </div>
+
+            <!-- 결과 섹션 -->
+            <div class="section">
+                <h2>📊 테스트 결과</h2>
+                <div id="resultContainer">
+                    <div class="empty-state">테스트를 실행하면 결과가 여기에 표시됩니다.</div>
+                </div>
+            </div>
+
+            <!-- 히스토리 섹션 -->
+            <div class="section">
+                <h2>
+                    📜 테스트 히스토리
+                    <button class="btn-secondary btn-small" onclick="clearHistory()">전체 삭제</button>
+                </h2>
+                <div id="historyContainer">
+                    <div class="empty-state">저장된 테스트 히스토리가 없습니다.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="save-indicator" id="saveIndicator">✅ 저장됨</div>
+    </body>
+</html>

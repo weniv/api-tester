@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>스터디인 API 테스터 v3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0c0e13;
+        --surface: #14171e;
+        --surface2: #1a1e28;
+        --border: #252a36;
+        --border-hover: #3a4158;
+        --text: #e2e6f0;
+        --text-dim: #7b8298;
+        --text-muted: #4a5068;
+        --accent: #6c8cff;
+        --accent-dim: #4a6ae0;
+        --green: #34d399;
+        --green-bg: rgba(52, 211, 153, 0.08);
+        --red: #f87171;
+        --red-bg: rgba(248, 113, 113, 0.08);
+        --yellow: #fbbf24;
+        --yellow-bg: rgba(251, 191, 36, 0.08);
+        --purple: #a78bfa;
+        --purple-bg: rgba(167, 139, 250, 0.08);
+        --blue-bg: rgba(108, 140, 255, 0.06);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+      .app {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: 310px;
+        min-width: 310px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .sidebar-header {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-header h1 {
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .sidebar-header h1 span {
+        background: linear-gradient(135deg, var(--accent), #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .base-url-box {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 6px;
+        padding: 4px 8px;
+        background: var(--bg);
+        border-radius: 4px;
+        word-break: break-all;
+      }
+      .sidebar-stats {
+        display: flex;
+        gap: 5px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .stat-chip {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 2px 7px;
+        border-radius: 100px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .stat-chip.pass {
+        background: var(--green-bg);
+        color: var(--green);
+      }
+      .stat-chip.fail {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+      .stat-chip.skip {
+        background: var(--yellow-bg);
+        color: var(--yellow);
+      }
+      .stat-chip.pending {
+        background: var(--blue-bg);
+        color: var(--accent);
+      }
+      .stat-chip .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .api-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 4px;
+      }
+      .api-list::-webkit-scrollbar {
+        width: 3px;
+      }
+      .api-list::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      .api-group-title {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 8px 3px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        user-select: none;
+      }
+      .api-group-title:hover {
+        color: var(--text-dim);
+      }
+      .api-group-title .chv {
+        transition: transform 0.2s;
+        font-size: 8px;
+      }
+      .api-group-title.collapsed .chv {
+        transform: rotate(-90deg);
+      }
+      .api-group-items {
+        overflow: hidden;
+      }
+      .api-group-title.collapsed + .api-group-items {
+        display: none;
+      }
+      .api-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 11px;
+        color: var(--text-dim);
+        transition: all 0.12s;
+      }
+      .api-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .api-item.active {
+        background: var(--blue-bg);
+        color: var(--accent);
+      }
+      .api-item .method {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8.5px;
+        font-weight: 700;
+        padding: 1px 4px;
+        border-radius: 3px;
+        min-width: 28px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .method-GET {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--green);
+      }
+      .method-POST {
+        background: rgba(108, 140, 255, 0.12);
+        color: var(--accent);
+      }
+      .method-PUT {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--yellow);
+      }
+      .method-DELETE {
+        background: rgba(248, 113, 113, 0.12);
+        color: var(--red);
+      }
+      .method-WS {
+        background: var(--purple-bg);
+        color: var(--purple);
+      }
+      .api-item .sdot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .sdot.pass {
+        background: var(--green);
+      }
+      .sdot.fail {
+        background: var(--red);
+      }
+      .sdot.warn {
+        background: var(--yellow);
+      }
+      .sdot.skip {
+        background: var(--text-muted);
+      }
+
+      .bottom-bar {
+        padding: 8px 12px;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Toolbar */
+      .toolbar {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toolbar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .toolbar input {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        padding: 5px 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        color: var(--text);
+        outline: none;
+        width: 170px;
+      }
+      .toolbar input:focus {
+        border-color: var(--accent);
+      }
+      .toolbar input::placeholder {
+        color: var(--text-muted);
+      }
+      .acct-tag {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .acct-tag.a1 {
+        background: rgba(108, 140, 255, 0.12);
+        color: var(--accent);
+      }
+      .acct-tag.a2 {
+        background: var(--purple-bg);
+        color: var(--purple);
+      }
+      .token-status {
+        font-size: 9.5px;
+        padding: 2px 7px;
+        border-radius: 100px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        white-space: nowrap;
+      }
+      .token-status.ok {
+        background: var(--green-bg);
+        color: var(--green);
+      }
+      .token-status.no {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+
+      .btn {
+        font-family: "Noto Sans KR", sans-serif;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dim);
+      }
+      .btn-primary:disabled,
+      .btn-success:disabled,
+      .btn-purple:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .btn-outline {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+      .btn-outline:hover {
+        border-color: var(--border-hover);
+        color: var(--text);
+      }
+      .btn-success {
+        background: rgba(52, 211, 153, 0.15);
+        color: var(--green);
+        border: 1px solid rgba(52, 211, 153, 0.2);
+      }
+      .btn-success:hover {
+        background: rgba(52, 211, 153, 0.25);
+      }
+      .btn-purple {
+        background: var(--purple-bg);
+        color: var(--purple);
+        border: 1px solid rgba(167, 139, 250, 0.2);
+      }
+      .btn-purple:hover {
+        background: rgba(167, 139, 250, 0.18);
+      }
+
+      /* Account Info Panel */
+      .acct-panel {
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        max-height: 350px;
+        overflow-y: auto;
+        transition: max-height 0.3s;
+      }
+      .acct-panel.hidden {
+        max-height: 0;
+        border-top: none;
+        overflow: hidden;
+      }
+      .acct-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-dim);
+      }
+      .acct-panel-header:hover {
+        color: var(--text);
+      }
+      .acct-panel-body {
+        padding: 0 16px 10px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .acct-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        min-width: 280px;
+        flex: 1;
+      }
+      .acct-card h4 {
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .acct-card .info-row {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: var(--text-dim);
+        padding: 2px 0;
+        display: flex;
+        gap: 8px;
+      }
+      .acct-card .info-row .lbl {
+        color: var(--text-muted);
+        min-width: 60px;
+      }
+      .acct-card .info-row .val {
+        word-break: break-all;
+        color: var(--text-dim);
+      }
+      .acct-card .token-val {
+        font-size: 9.5px;
+        color: var(--text-muted);
+        word-break: break-all;
+        max-height: 40px;
+        overflow-y: auto;
+        background: var(--surface);
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin-top: 4px;
+      }
+
+      /* Results */
+      .results-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+      .results-area::-webkit-scrollbar {
+        width: 4px;
+      }
+      .results-area::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      .welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        color: var(--text-muted);
+      }
+      .welcome .icon {
+        font-size: 38px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+      }
+      .welcome h2 {
+        font-size: 15px;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+      .welcome p {
+        font-size: 11.5px;
+        max-width: 420px;
+        line-height: 1.8;
+      }
+
+      .result-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 6px;
+        overflow: hidden;
+        animation: si 0.18s ease-out;
+      }
+      @keyframes si {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .result-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .result-header:hover {
+        background: var(--surface2);
+      }
+      .result-header .method {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+      }
+      .result-header .aname {
+        font-size: 10.5px;
+        color: var(--text-dim);
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .result-header .path {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .result-header .sbadge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 100px;
+      }
+      .s2xx {
+        background: var(--green-bg);
+        color: var(--green);
+      }
+      .s4xx {
+        background: var(--yellow-bg);
+        color: var(--yellow);
+      }
+      .s5xx {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+      .serr {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+      .sskip {
+        background: var(--yellow-bg);
+        color: var(--yellow);
+      }
+      .result-header .time {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9.5px;
+        color: var(--text-muted);
+      }
+      .result-body {
+        padding: 10px 12px;
+        display: none;
+      }
+      .result-body.open {
+        display: block;
+      }
+      .result-body pre {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        line-height: 1.5;
+        color: var(--text-dim);
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 8px;
+        background: var(--bg);
+        border-radius: 5px;
+        border: 1px solid var(--border);
+      }
+      .result-body .lbl {
+        font-size: 9.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 8px 0 3px;
+      }
+      .result-body .lbl:first-child {
+        margin-top: 0;
+      }
+      .rnote {
+        font-size: 10.5px;
+        color: var(--text-dim);
+        padding: 6px 10px;
+        border-radius: 5px;
+        border-left: 3px solid var(--yellow);
+        margin-top: 6px;
+        background: var(--yellow-bg);
+      }
+      .rnote.info {
+        background: var(--blue-bg);
+        border-left-color: var(--accent);
+      }
+
+      .progress-bar {
+        height: 3px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 0 16px;
+        overflow: hidden;
+        display: none;
+      }
+      .progress-bar.active {
+        display: block;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--green));
+        border-radius: 2px;
+        transition: width 0.3s;
+        width: 0%;
+      }
+
+      .summary-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 14px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .summary-stat {
+        text-align: center;
+      }
+      .summary-stat .num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .summary-stat .slbl {
+        font-size: 9.5px;
+        color: var(--text-muted);
+      }
+      .summary-stat .num.green {
+        color: var(--green);
+      }
+      .summary-stat .num.red {
+        color: var(--red);
+      }
+      .summary-stat .num.yellow {
+        color: var(--yellow);
+      }
+      .summary-divider {
+        width: 1px;
+        height: 32px;
+        background: var(--border);
+      }
+      .spinner {
+        width: 11px;
+        height: 11px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: sp 0.6s linear infinite;
+        display: inline-block;
+      }
+      @keyframes sp {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h1>🧪 <span>StudyIn</span> API Tester <small style="font-size: 10px; color: var(--text-muted); font-weight: 400">v3</small></h1>
+          <div class="base-url-box">https://api.wenivops.co.kr/services/studyin</div>
+          <div class="sidebar-stats">
+            <div class="stat-chip pass">
+              <div class="dot"></div>
+              <span id="sPass">0</span>
+            </div>
+            <div class="stat-chip fail">
+              <div class="dot"></div>
+              <span id="sFail">0</span>
+            </div>
+            <div class="stat-chip skip">
+              <div class="dot"></div>
+              <span id="sSkip">0</span>
+            </div>
+            <div class="stat-chip pending">
+              <div class="dot"></div>
+              <span id="sPend">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="api-list" id="apiList"></div>
+        <div class="bottom-bar">
+          <button class="btn btn-outline" onclick="clearAll()">🗑 초기화</button>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <span class="acct-tag a1">계정1</span>
+            <input id="e1" placeholder="이메일 (빈칸=자동생성)" />
+            <input id="p1" type="password" placeholder="비밀번호" value="Test1234!@#" />
+            <button class="btn btn-primary" onclick="manualRegister(1)">📝 가입+로그인</button>
+            <button class="btn btn-outline" onclick="manualLogin(1)">🔑 로그인</button>
+            <div class="token-status no" id="ts1">● 미인증</div>
+          </div>
+          <div class="toolbar-row">
+            <span class="acct-tag a2">계정2</span>
+            <input id="e2" placeholder="이메일 (빈칸=자동생성)" />
+            <input id="p2" type="password" placeholder="비밀번호" value="Test1234!@#" />
+            <button class="btn btn-purple" onclick="manualRegister(2)">📝 가입+로그인</button>
+            <button class="btn btn-outline" onclick="manualLogin(2)">🔑 로그인</button>
+            <div class="token-status no" id="ts2">● 미인증</div>
+          </div>
+          <div class="toolbar-row">
+            <button class="btn btn-success" id="runBtn" onclick="runAll()">▶ 전체 테스트 실행</button>
+            <button class="btn btn-outline" onclick="toggleAcctPanel()">👤 계정 정보</button>
+            <span style="font-size: 9.5px; color: var(--text-muted)">전체 테스트: 자동 계정 2개 생성 → 전 API 순차 호출 → 정리(탈퇴)</span>
+          </div>
+        </div>
+
+        <!-- Account Info Panel -->
+        <div class="acct-panel hidden" id="acctPanel">
+          <div class="acct-panel-header" onclick="toggleAcctPanel()">📋 계정 상세 정보 <span>▲</span></div>
+          <div class="acct-panel-body" id="acctPanelBody"></div>
+        </div>
+
+        <div class="progress-bar" id="pbar"><div class="progress-fill" id="pfill"></div></div>
+        <div class="results-area" id="resArea">
+          <div class="welcome" id="welc">
+            <div class="icon">⚡</div>
+            <h2>스터디인 API 전체 테스트</h2>
+            <p>
+              회원가입(2계정) → 프로필(정회원 전환) → 스터디 CRUD → 참가/탈퇴 →<br />
+              좋아요 → 댓글/대댓글 CRUD → 배너 CRUD → 채팅(REST+WS) →<br />
+              알림 CRUD → 신고 → 비밀번호 변경 → 회원탈퇴<br /><br />
+              <strong>▶ 전체 테스트 실행</strong>을 누르세요
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const BASE = "https://api.wenivops.co.kr/services/studyin";
+      const LS_KEY = "studyin_api_tester";
+
+      // ── State ──
+      const A = {
+        1: { email: "", pw: "", token: "", refresh: "", pk: null, nick: "", name: "" },
+        2: { email: "", pw: "", token: "", refresh: "", pk: null, nick: "", name: "" },
+      };
+      let D = {}; // testData: studyId, commentId, recommentId, bannerId, notiId, a1Regular, a2Regular
+      let R = {}; // results
+      let acctHistory = []; // 생성된 계정 이력
+
+      const now = () => Date.now();
+      const rEmail = () => `tester_${now()}_${Math.random().toString(36).slice(2, 5)}@test.com`;
+      const rNick = () => `닉_${now().toString().slice(-8)}_${Math.random().toString(36).slice(2, 5)}`;
+      const rName = (n) => `테스터${n}_${now().toString().slice(-6)}_${Math.random().toString(36).slice(2, 4)}`;
+      const rPhone = () => `010-${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+      // ── localStorage ──
+      function saveToLS() {
+        try {
+          const data = { accounts: A, history: acctHistory, savedAt: new Date().toISOString() };
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn("localStorage 저장 실패:", e);
+        }
+      }
+
+      function loadFromLS() {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          if (!raw) return false;
+          const data = JSON.parse(raw);
+          if (data.accounts) {
+            [1, 2].forEach((n) => {
+              if (data.accounts[n]) {
+                Object.assign(A[n], data.accounts[n]);
+                document.getElementById(`e${n}`).value = A[n].email || "";
+                document.getElementById(`p${n}`).value = A[n].pw || "";
+                upUI(n);
+              }
+            });
+          }
+          if (data.history) acctHistory = data.history;
+          return true;
+        } catch (e) {
+          console.warn("localStorage 로드 실패:", e);
+          return false;
+        }
+      }
+
+      function addToHistory(n) {
+        const a = A[n];
+        if (!a.email) return;
+        // 중복 제거
+        acctHistory = acctHistory.filter((h) => h.email !== a.email);
+        acctHistory.unshift({ email: a.email, pw: a.pw, pk: a.pk, nick: a.nick, name: a.name, createdAt: new Date().toISOString() });
+        if (acctHistory.length > 20) acctHistory = acctHistory.slice(0, 20);
+        saveToLS();
+      }
+
+      function clearLS() {
+        localStorage.removeItem(LS_KEY);
+        acctHistory = [];
+        alert("저장된 계정 정보가 삭제되었습니다.");
+        updateAcctPanel();
+      }
+
+      // ── fetch wrapper ──
+      async function api(method, path, { body, token } = {}) {
+        const url = BASE + path;
+        const h = {};
+        if (token) h["Authorization"] = `Bearer ${token}`;
+        const o = { method, headers: h };
+        if (body && (method === "POST" || method === "PUT")) {
+          h["Content-Type"] = "application/json";
+          o.body = JSON.stringify(body);
+        }
+        const t0 = performance.now();
+        try {
+          const r = await fetch(url, o);
+          const ms = Math.round(performance.now() - t0);
+          const txt = await r.text();
+          let d;
+          try {
+            d = JSON.parse(txt);
+          } catch {
+            d = txt;
+          }
+          return { ok: r.ok, status: r.status, data: d, ms, url, method, path, reqBody: body || null };
+        } catch (e) {
+          return { ok: false, status: 0, data: { error: e.message }, ms: Math.round(performance.now() - t0), url, method, path, err: true };
+        }
+      }
+
+      function SKIP(msg, m, p) {
+        return { ok: true, status: 0, data: { detail: "SKIP: " + msg }, ms: 0, method: m, path: p, skip: true };
+      }
+
+      // ── 자동 생성 헬퍼 함수 ──
+      async function ensureStudy(token) {
+        if (D.studyId) return true;
+        // 기존 스터디 목록에서 가져오기 시도
+        const listRes = await api("GET", "/study/");
+        if (listRes.ok && listRes.data?.results?.length) {
+          D.studyId = listRes.data.results[0].id;
+          D.studyCreatorToken = null; // 기존 스터디는 생성자 알 수 없음
+          return true;
+        }
+        // 없으면 새로 생성
+        const r = await api("POST", "/study/", {
+          token,
+          body: {
+            title: `자동생성 스터디 ${now()}`,
+            thumbnail: "/media/img/study/thumbnail/default.jpg",
+            is_offline: false,
+            recruitment: 5,
+            study_info: "테스트용 자동 생성 스터디",
+            study_day: [{ id: 1, name: "월" }],
+            start_date: "2026-12-01",
+            term: 4,
+            start_time: "19:00:00",
+            end_time: "21:00:00",
+            difficulty: { id: 1, name: "초급" },
+            subject: { id: 1, name: "개념학습" },
+            search_tag: [{ name: "Python" }],
+          },
+        });
+        if (r.ok) {
+          D.studyId = r.data.id;
+          D.studyCreatorToken = token; // 생성자 토큰 저장
+          return true;
+        }
+        return false;
+      }
+
+      async function ensureComment(token) {
+        if (D.commentId) return true;
+        if (!D.studyId) return false;
+        const r = await api("POST", `/study/${D.studyId}/comment/`, {
+          token,
+          body: { content: "자동생성 댓글", is_secret: false }
+        });
+        if (r.ok) {
+          D.commentId = r.data.id;
+          return true;
+        }
+        return false;
+      }
+
+      async function ensureRecomment(token) {
+        if (D.recommentId) return true;
+        if (!D.studyId || !D.commentId) return false;
+        const r = await api("POST", `/study/${D.studyId}/comment/${D.commentId}/recomment/`, {
+          token,
+          body: { content: "자동생성 대댓글", is_secret: false }
+        });
+        if (r.ok) {
+          D.recommentId = r.data.id || r.data.recomment_id;
+          return true;
+        }
+        return false;
+      }
+
+      // ── Test Scenario (모든 API) ──
+      function scenario() {
+        const a1 = () => A[1],
+          a2 = () => A[2];
+        return [
+          // ====== 0. 파일 업로드 ======
+          { g: "0. 파일업로드", id: "img-up", n: "이미지 업로드", m: "POST", skip: true, run: async () => SKIP("파일 선택 필요", "POST", "/file-uploader/image/") },
+          { g: "0. 파일업로드", id: "file-up", n: "파일 업로드", m: "POST", skip: true, run: async () => SKIP("파일 선택 필요", "POST", "/file-uploader/file/") },
+
+          // ====== 1. 계정1 회원가입 플로우 ======
+          { g: "1-1. 계정1 가입", id: "a1-echk", n: "이메일 중복확인", m: "GET", run: async () => api("GET", `/accounts/emails/check/?email=${a1().email}`) },
+          { g: "1-1. 계정1 가입", id: "a1-esend", n: "인증 이메일 발송", m: "POST", run: async () => api("POST", "/accounts/email-verifications/", { body: { email: a1().email } }) },
+          {
+            g: "1-1. 계정1 가입",
+            id: "a1-everify",
+            n: "인증 코드 체크",
+            m: "POST",
+            run: async () => api("POST", "/accounts/email-verifications/verify/", { body: { email: a1().email, verification_number: "123456" } }),
+          },
+          { g: "1-1. 계정1 가입", id: "a1-reg", n: "회원가입", m: "POST", run: async () => api("POST", "/accounts/register/", { body: { email: a1().email, password: a1().pw } }) },
+          {
+            g: "1-1. 계정1 가입",
+            id: "a1-login",
+            n: "로그인",
+            m: "POST",
+            run: async () => {
+              const r = await api("POST", "/accounts/login/", { body: { email: a1().email, password: a1().pw } });
+              if (r.ok) {
+                a1().token = r.data.access_token;
+                a1().refresh = r.data.refresh_token;
+                // pk를 여러 가능한 필드에서 추출
+                a1().pk = r.data.user?.pk || r.data.user?.id || r.data.pk || r.data.id;
+                console.log("[로그인 응답]", JSON.stringify(r.data, null, 2));
+                addToHistory(1);
+                upUI(1);
+              }
+              return r;
+            },
+          },
+
+          // ====== 1. 계정1 토큰 ======
+          { g: "1-2. 계정1 토큰", id: "a1-tver", n: "토큰 검증", m: "POST", run: async () => api("POST", "/accounts/token/verify/", { body: { token: a1().token } }) },
+          {
+            g: "1-2. 계정1 토큰",
+            id: "a1-tref",
+            n: "토큰 리프레시",
+            m: "POST",
+            run: async () => {
+              const r = await api("POST", "/accounts/token/refresh/", { body: { refresh: a1().refresh } });
+              if (r.ok && r.data.access) a1().token = r.data.access;
+              return r;
+            },
+          },
+
+          // ====== 1. 계정1 프로필 (정회원 전환) ======
+          { g: "1-3. 계정1 프로필", id: "a1-mtype", n: "회원 타입 확인", m: "GET", run: async () => api("GET", "/accounts/members/type/", { token: a1().token }) },
+          {
+            g: "1-3. 계정1 프로필",
+            id: "a1-nchk",
+            n: "닉네임 중복확인",
+            m: "GET",
+            run: async () => {
+              a1().nick = rNick();
+              return api("GET", `/accounts/nicknames/?nickname=${a1().nick}`);
+            },
+          },
+          { g: "1-3. 계정1 프로필", id: "a1-pget", n: "프로필 조회(내)", m: "GET", run: async () => a1().pk ? api("GET", `/accounts/profiles/${a1().pk}/`, { token: a1().token }) : SKIP("pk 없음", "GET", "/accounts/profiles/") },
+          {
+            g: "1-3. 계정1 프로필",
+            id: "a1-pupd",
+            n: "프로필 수정(정회원 전환)",
+            m: "PUT",
+            note: "name, nickname, phone 필수 → 정회원 전환",
+            run: async () => {
+              if (!a1().pk) return SKIP("pk 없음 (로그인 실패)", "PUT", "/accounts/profiles/");
+              a1().name = rName(1);
+              const r = await api("PUT", `/accounts/profiles/${a1().pk}/`, {
+                token: a1().token,
+                body: {
+                  name: a1().name,
+                  nickname: a1().nick,
+                  phone: rPhone(),
+                  introduction: "API 테스트 계정1",
+                  preferred_region: { id: 1 },
+                },
+              });
+              if (r.ok) D.a1Regular = true;
+              return r;
+            },
+          },
+          { g: "1-3. 계정1 프로필", id: "a1-mtype2", n: "회원 타입 재확인", m: "GET", note: "정회원 전환 확인", run: async () => api("GET", "/accounts/members/type/", { token: a1().token }) },
+
+          // ====== 1. 계정2 회원가입 플로우 ======
+          { g: "1-4. 계정2 가입", id: "a2-echk", n: "이메일 중복확인", m: "GET", run: async () => api("GET", `/accounts/emails/check/?email=${a2().email}`) },
+          { g: "1-4. 계정2 가입", id: "a2-esend", n: "인증 이메일 발송", m: "POST", run: async () => api("POST", "/accounts/email-verifications/", { body: { email: a2().email } }) },
+          {
+            g: "1-4. 계정2 가입",
+            id: "a2-everify",
+            n: "인증 코드 체크",
+            m: "POST",
+            run: async () => api("POST", "/accounts/email-verifications/verify/", { body: { email: a2().email, verification_number: "123456" } }),
+          },
+          { g: "1-4. 계정2 가입", id: "a2-reg", n: "회원가입", m: "POST", run: async () => api("POST", "/accounts/register/", { body: { email: a2().email, password: a2().pw } }) },
+          {
+            g: "1-4. 계정2 가입",
+            id: "a2-login",
+            n: "로그인",
+            m: "POST",
+            run: async () => {
+              const r = await api("POST", "/accounts/login/", { body: { email: a2().email, password: a2().pw } });
+              if (r.ok) {
+                a2().token = r.data.access_token;
+                a2().refresh = r.data.refresh_token;
+                // pk를 여러 가능한 필드에서 추출
+                a2().pk = r.data.user?.pk || r.data.user?.id || r.data.pk || r.data.id;
+                console.log("[계정2 로그인 응답]", JSON.stringify(r.data, null, 2));
+                addToHistory(2);
+                upUI(2);
+              }
+              return r;
+            },
+          },
+          {
+            g: "1-4. 계정2 가입",
+            id: "a2-nchk",
+            n: "닉네임 중복확인",
+            m: "GET",
+            run: async () => {
+              a2().nick = rNick();
+              return api("GET", `/accounts/nicknames/?nickname=${a2().nick}`);
+            },
+          },
+          {
+            g: "1-4. 계정2 가입",
+            id: "a2-pupd",
+            n: "프로필 수정(정회원 전환)",
+            m: "PUT",
+            run: async () => {
+              if (!a2().pk) return SKIP("pk 없음 (로그인 실패)", "PUT", "/accounts/profiles/");
+              a2().name = rName(2);
+              const r = await api("PUT", `/accounts/profiles/${a2().pk}/`, {
+                token: a2().token,
+                body: {
+                  name: a2().name,
+                  nickname: a2().nick,
+                  phone: rPhone(),
+                  introduction: "API 테스트 계정2",
+                  preferred_region: { id: 1 },
+                },
+              });
+              if (r.ok) D.a2Regular = true;
+              return r;
+            },
+          },
+          { g: "1-4. 계정2 가입", id: "a2-pother", n: "타인 프로필 조회(계정1)", m: "GET", run: async () => a1().pk ? api("GET", `/accounts/profiles/${a1().pk}/`, { token: a2().token }) : SKIP("계정1 pk 없음", "GET", "/accounts/profiles/") },
+
+          // ====== 1. 지역 ======
+          { g: "1-5. 기타", id: "regions", n: "지역 카테고리 조회", m: "GET", run: async () => api("GET", "/accounts/regions/") },
+
+          // ====== 2. 스터디 카테고리 ======
+          { g: "2-1. 스터디 카테고리", id: "st-subj", n: "주제 카테고리", m: "GET", run: async () => api("GET", "/study/subject/") },
+          { g: "2-1. 스터디 카테고리", id: "st-diff", n: "난이도 카테고리", m: "GET", run: async () => api("GET", "/study/difficulty/") },
+          { g: "2-1. 스터디 카테고리", id: "st-tag", n: "검색 태그", m: "GET", run: async () => api("GET", "/study/searchtag/") },
+
+          // ====== 2. 스터디 CRUD ======
+          {
+            g: "2-2. 스터디 CRUD",
+            id: "st-create",
+            n: "스터디 만들기(계정1)",
+            m: "POST",
+            note: "정회원만 가능 (준회원이면 기존 스터디 사용)",
+            run: async () => {
+              const r = await api("POST", "/study/", {
+                token: a1().token,
+                body: {
+                  title: `테스트 스터디 ${now()}`,
+                  thumbnail: "/media/img/study/thumbnail/default.jpg",
+                  is_offline: false,
+                  recruitment: 5,
+                  study_info: "API 자동 테스트 스터디",
+                  study_day: [{ id: 1, name: "월" }],
+                  start_date: "2026-12-01",
+                  term: 4,
+                  start_time: "19:00:00",
+                  end_time: "21:00:00",
+                  difficulty: { id: 1, name: "초급" },
+                  subject: { id: 1, name: "개념학습" },
+                  search_tag: [{ name: "Python" }],
+                },
+              });
+              if (r.ok) {
+                D.studyId = r.data.id;
+                D.studyCreatorToken = a1().token; // 생성자 토큰 저장
+              }
+              // 실패해도 기존 스터디 목록에서 가져오기 (이후 테스트 진행 위해)
+              if (!r.ok && !D.studyId) {
+                const listRes = await api("GET", "/study/");
+                if (listRes.ok && listRes.data?.results?.length) {
+                  D.studyId = listRes.data.results[0].id;
+                  D.studyCreatorToken = null; // 기존 스터디는 생성자 알 수 없음
+                }
+              }
+              return r;
+            },
+          },
+          {
+            g: "2-2. 스터디 CRUD",
+            id: "st-list",
+            n: "스터디 전체 조회",
+            m: "GET",
+            run: async () => {
+              const r = await api("GET", "/study/");
+              if (r.ok && !D.studyId && r.data?.results?.length) D.studyId = r.data.results[0].id;
+              return r;
+            },
+          },
+          { g: "2-2. 스터디 CRUD", id: "st-list2", n: "스터디 리스트(list/)", m: "GET", run: async () => api("GET", "/study/list/") },
+          { g: "2-2. 스터디 CRUD", id: "st-detail", n: "스터디 상세", m: "GET", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            return D.studyId ? api("GET", `/study/${D.studyId}/`) : SKIP("스터디 없음", "GET", "");
+          }},
+          { g: "2-2. 스터디 CRUD", id: "st-search", n: "스터디 검색", m: "GET", run: async () => api("GET", "/study/?search=Python") },
+          { g: "2-2. 스터디 CRUD", id: "st-update", n: "스터디 수정(생성자)", m: "PUT", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            if (!D.studyId) return SKIP("스터디 없음", "PUT", "");
+            if (!D.studyCreatorToken) return SKIP("기존 스터디(생성자 아님)", "PUT", `/study/${D.studyId}/`);
+            return api("PUT", `/study/${D.studyId}/`, {
+              token: D.studyCreatorToken,
+              body: {
+                title: `수정됨 ${now()}`,
+                study_info: "수정된 스터디 설명"
+              }
+            });
+          }},
+          { g: "2-2. 스터디 CRUD", id: "st-my", n: "내가 만든 스터디", m: "GET", run: async () => api("GET", "/study/my-study/", { token: a1().token }) },
+          { g: "2-2. 스터디 CRUD", id: "st-parting", n: "참여중인 스터디", m: "GET", run: async () => api("GET", "/study/my-participating-study/", { token: a1().token }) },
+          { g: "2-2. 스터디 CRUD", id: "st-closed", n: "마감된 스터디", m: "GET", run: async () => api("GET", "/study/my-closed-study/", { token: a1().token }) },
+
+          // ====== 2. 참가 ======
+          { g: "2-3. 참가/탈퇴", id: "st-parti-before", n: "참가자 조회(전)", m: "GET", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            return D.studyId ? api("GET", `/study/${D.studyId}/participate/`) : SKIP("스터디 없음", "GET", "");
+          }},
+          { g: "2-3. 참가/탈퇴", id: "st-join", n: "스터디 참가(계정2)", m: "POST", note: "정회원만 가능", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            if (!D.studyId) return SKIP("스터디 생성 실패", "POST", "");
+            return api("POST", `/study/${D.studyId}/participate/`, { token: a2().token });
+          }},
+          { g: "2-3. 참가/탈퇴", id: "st-parti-after", n: "참가자 조회(후)", m: "GET", run: async () => {
+            return D.studyId ? api("GET", `/study/${D.studyId}/participate/`) : SKIP("스터디 없음", "GET", "");
+          }},
+
+          // ====== 2. 좋아요 ======
+          { g: "2-4. 좋아요", id: "st-like", n: "좋아요(계정2)", m: "POST", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            return D.studyId ? api("POST", `/study/${D.studyId}/like/`, { token: a2().token }) : SKIP("스터디 없음", "POST", "");
+          }},
+          { g: "2-4. 좋아요", id: "st-liked", n: "좋아요 조회", m: "GET", skip: true, run: async () => {
+            return SKIP("GET 미지원 (백엔드 확인 필요)", "GET", `/study/{id}/like/`);
+          }},
+          { g: "2-4. 좋아요", id: "st-unlike", n: "좋아요 취소(계정2)", m: "DELETE", run: async () => {
+            return D.studyId ? api("DELETE", `/study/${D.studyId}/like/`, { token: a2().token }) : SKIP("스터디 없음", "DELETE", "");
+          }},
+
+          // ====== 3. 댓글 ======
+          {
+            g: "3-1. 댓글",
+            id: "cm-create1",
+            n: "댓글 작성(계정1)",
+            m: "POST",
+            note: "정회원만 가능",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.studyId) return SKIP("스터디 생성 실패", "POST", "");
+              const r = await api("POST", `/study/${D.studyId}/comment/`, { token: a1().token, body: { content: "계정1 댓글", is_secret: false } });
+              if (r.ok) D.commentId = r.data.id;
+              return r;
+            },
+          },
+          {
+            g: "3-1. 댓글",
+            id: "cm-create2",
+            n: "댓글 작성(계정2)",
+            m: "POST",
+            note: "정회원만 가능",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.studyId) return SKIP("스터디 생성 실패", "POST", "");
+              const r = await api("POST", `/study/${D.studyId}/comment/`, { token: a2().token, body: { content: "계정2 댓글", is_secret: false } });
+              if (r.ok) D.comment2Id = r.data.id;
+              return r;
+            },
+          },
+          {
+            g: "3-1. 댓글",
+            id: "cm-secret",
+            n: "비밀 댓글(계정2)",
+            m: "POST",
+            note: "정회원만 가능",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.studyId) return SKIP("스터디 생성 실패", "POST", "");
+              return api("POST", `/study/${D.studyId}/comment/`, { token: a2().token, body: { content: "비밀 댓글", is_secret: true } });
+            },
+          },
+          { g: "3-1. 댓글", id: "cm-list", n: "댓글 목록", m: "GET", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            return D.studyId ? api("GET", `/study/${D.studyId}/comment/`) : SKIP("스터디 없음", "GET", "");
+          }},
+          { g: "3-1. 댓글", id: "cm-detail", n: "댓글 상세", m: "GET", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            if (!D.commentId) await ensureComment(a1().token);
+            return (D.studyId && D.commentId) ? api("GET", `/study/${D.studyId}/comment/${D.commentId}/`) : SKIP("댓글 생성 실패", "GET", "");
+          }},
+          {
+            g: "3-1. 댓글",
+            id: "cm-update",
+            n: "댓글 수정(계정1)",
+            m: "PUT",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.commentId) await ensureComment(a1().token);
+              return (D.studyId && D.commentId) ? api("PUT", `/study/${D.studyId}/comment/${D.commentId}/`, { token: a1().token, body: { content: "수정된 댓글", is_secret: false } }) : SKIP("댓글 생성 실패", "PUT", "");
+            },
+          },
+
+          // ====== 3. 대댓글 ======
+          {
+            g: "3-2. 대댓글",
+            id: "rc-create",
+            n: "대댓글 작성(계정2)",
+            m: "POST",
+            note: "정회원만 가능",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.commentId) await ensureComment(a1().token);
+              if (!D.studyId || !D.commentId) return SKIP("스터디/댓글 생성 실패", "POST", "");
+              const r = await api("POST", `/study/${D.studyId}/comment/${D.commentId}/recomment/`, { token: a2().token, body: { content: "대댓글 테스트", is_secret: false } });
+              if (r.ok) D.recommentId = r.data.id || r.data.recomment_id;
+              return r;
+            },
+          },
+          {
+            g: "3-2. 대댓글",
+            id: "rc-tagged",
+            n: "태그 대댓글(계정1→계정2)",
+            m: "POST",
+            note: "정회원만 가능",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.commentId) await ensureComment(a1().token);
+              if (!D.studyId || !D.commentId) return SKIP("스터디/댓글 생성 실패", "POST", "");
+              return api("POST", `/study/${D.studyId}/comment/${D.commentId}/recomment/`, { token: a1().token, body: { content: "태그 대댓글", is_secret: false, tagged_user: a2().pk } });
+            },
+          },
+          { g: "3-2. 대댓글", id: "rc-list", n: "대댓글 목록", m: "GET", run: async () => {
+            if (!D.studyId) await ensureStudy(a1().token);
+            if (!D.commentId) await ensureComment(a1().token);
+            return (D.studyId && D.commentId) ? api("GET", `/study/${D.studyId}/comment/${D.commentId}/recomment/`) : SKIP("스터디/댓글 없음", "GET", "");
+          }},
+          {
+            g: "3-2. 대댓글",
+            id: "rc-detail",
+            n: "대댓글 상세",
+            m: "GET",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.commentId) await ensureComment(a1().token);
+              if (!D.recommentId) await ensureRecomment(a2().token);
+              return (D.studyId && D.commentId && D.recommentId) ? api("GET", `/study/${D.studyId}/comment/${D.commentId}/recomment/${D.recommentId}/`) : SKIP("대댓글 생성 실패", "GET", "");
+            },
+          },
+          {
+            g: "3-2. 대댓글",
+            id: "rc-update",
+            n: "대댓글 수정(계정2)",
+            m: "PUT",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.commentId) await ensureComment(a1().token);
+              if (!D.recommentId) await ensureRecomment(a2().token);
+              return (D.studyId && D.commentId && D.recommentId) ? api("PUT", `/study/${D.studyId}/comment/${D.commentId}/recomment/${D.recommentId}/`, { token: a2().token, body: { content: "수정 대댓글", is_secret: false } }) : SKIP("대댓글 생성 실패", "PUT", "");
+            },
+          },
+          // ====== 4. 배너 ======
+          {
+            g: "4. 배너",
+            id: "bn-create",
+            n: "배너 등록",
+            m: "POST",
+            run: async () => {
+              const r = await api("POST", "/banners/", {
+                token: a1().token,
+                body: {
+                  title: `배너 ${now()}`,
+                  sub_text: "테스트 배너",
+                  img: "/media/img/banner/test.jpg",
+                  background: "#FFFFFF",
+                  color: "#000",
+                  link: "https://studyin.co.kr",
+                },
+              });
+              if (r.ok) D.bannerId = r.data.id;
+              return r;
+            },
+          },
+          { g: "4. 배너", id: "bn-list", n: "배너 조회", m: "GET", run: async () => api("GET", "/banners/", { token: a1().token }) },
+          {
+            g: "4. 배너",
+            id: "bn-update",
+            n: "배너 수정",
+            m: "PUT",
+            run: async () => (D.bannerId ? api("PUT", `/banners/${D.bannerId}/`, { token: a1().token, body: { title: `수정 배너 ${now()}` } }) : SKIP("배너ID 없음", "PUT", "")),
+          },
+          {
+            g: "4. 배너",
+            id: "bn-delete",
+            n: "배너 삭제",
+            m: "DELETE",
+            run: async () => (D.bannerId ? api("DELETE", `/banners/${D.bannerId}/`, { token: a1().token }) : SKIP("배너ID 없음", "DELETE", "")),
+          },
+
+          // ====== 5. 채팅 REST (스터디 참가자만 가능) ======
+
+          // ====== 5. 웹소켓 (스터디 참가자만 가능) ======
+          {
+            g: "5. 채팅",
+            id: "ws-test",
+            n: "웹소켓 연결+메시지(참가자)",
+            m: "WS",
+            run: async () => {
+              if (!D.studyId) await ensureStudy(a1().token);
+              if (!D.studyId) return SKIP("스터디 없음", "WS", "");
+              return new Promise((resolve) => {
+                try {
+                  const wsUrl = `wss://api.wenivops.co.kr/services/studyin-chat/ws/study/${D.studyId}/?token=${a2().token}`;
+                  const ws = new WebSocket(wsUrl);
+                  let done = false;
+                  const to = setTimeout(() => {
+                    if (!done) {
+                      done = true;
+                      ws.close();
+                      resolve({ ok: false, status: 0, data: { error: "타임아웃 5초" }, ms: 5000, method: "WS", path: `ws/study/${D.studyId}/` });
+                    }
+                  }, 5000);
+                  ws.onopen = () => ws.send(JSON.stringify({ type: "text", message: "자동 테스트 메시지" }));
+                  ws.onmessage = (e) => {
+                    if (!done) {
+                      done = true;
+                      clearTimeout(to);
+                      let d;
+                      try {
+                        d = JSON.parse(e.data);
+                      } catch {
+                        d = e.data;
+                      }
+                      ws.close();
+                      resolve({ ok: true, status: 101, data: d, ms: 0, method: "WS", path: `ws/study/${D.studyId}/` });
+                    }
+                  };
+                  ws.onerror = () => {
+                    if (!done) {
+                      done = true;
+                      clearTimeout(to);
+                      resolve({ ok: false, status: 0, data: { error: "WS 연결 실패" }, ms: 0, method: "WS", path: `ws/study/${D.studyId}/` });
+                    }
+                  };
+                  ws.onclose = (ev) => {
+                    if (!done) {
+                      done = true;
+                      clearTimeout(to);
+                      resolve({ ok: ev.code === 1000 || ev.code === 1005, status: ev.code, data: { code: ev.code, reason: ev.reason || "닫힘" }, ms: 0, method: "WS", path: `ws/study/${D.studyId}/` });
+                    }
+                  };
+                } catch (e) {
+                  resolve({ ok: false, status: 0, data: { error: e.message }, ms: 0, method: "WS", path: "ws/" });
+                }
+              });
+            },
+          },
+
+          // ====== 5. 채팅 REST (웹소켓 연결 후) ======
+          { g: "5. 채팅", id: "ch-list", n: "채팅 목록 조회(WS 연결 후)", m: "GET", run: async () => {
+            if (!D.studyId) return SKIP("스터디 없음", "GET", "");
+            return api("GET", `/study/${D.studyId}/chats/`, { token: a2().token });
+          }},
+          { g: "5. 채팅", id: "ch-missed", n: "놓친 채팅 조회(WS 연결 후)", m: "GET", run: async () => {
+            if (!D.studyId) return SKIP("스터디 없음", "GET", "");
+            return api("GET", `/study/${D.studyId}/chats/after-disconnect/`, { token: a2().token });
+          }},
+
+          // ====== 6. 알림 ======
+          {
+            g: "6. 알림",
+            id: "nt-list",
+            n: "알림 목록",
+            m: "GET",
+            run: async () => {
+              const r = await api("GET", "/notifications/", { token: a1().token });
+              if (r.ok && r.data?.results?.length) D.notiId = r.data.results[0].notification_id;
+              return r;
+            },
+          },
+          { g: "6. 알림", id: "nt-one", n: "알림 상세", m: "GET", run: async () => (D.notiId ? api("GET", `/notifications/${D.notiId}/`, { token: a1().token }) : SKIP("알림 없음", "GET", "")) },
+          {
+            g: "6. 알림",
+            id: "nt-read1",
+            n: "알림 읽음(1개)",
+            m: "PUT",
+            run: async () => (D.notiId ? api("PUT", `/notifications/${D.notiId}/`, { token: a1().token }) : SKIP("알림 없음", "PUT", "")),
+          },
+          { g: "6. 알림", id: "nt-readall", n: "알림 전체 읽음", m: "PUT", run: async () => api("PUT", "/notifications/", { token: a1().token }) },
+          {
+            g: "6. 알림",
+            id: "nt-del1",
+            n: "알림 삭제(1개)",
+            m: "DELETE",
+            run: async () => (D.notiId ? api("DELETE", `/notifications/${D.notiId}/`, { token: a1().token }) : SKIP("알림 없음", "DELETE", "")),
+          },
+          { g: "6. 알림", id: "nt-delall", n: "알림 전체 삭제", m: "DELETE", run: async () => api("DELETE", "/notifications/", { token: a1().token }) },
+
+          // ====== 7. 신고 ======
+          { g: "7. 신고", id: "rp-list", n: "신고 목록", m: "GET", run: async () => api("GET", "/report/", { token: a1().token }) },
+          {
+            g: "7. 신고",
+            id: "rp-create",
+            n: "신고하기(계정1→계정2)",
+            m: "POST",
+            run: async () => a2().pk ? api("POST", "/report/", { token: a1().token, body: { report_reason: 7, report_content: "자동 테스트 신고", reported_user: a2().pk } }) : SKIP("계정2 pk 없음", "POST", ""),
+          },
+
+          // ====== 비밀번호 변경 ======
+          {
+            g: "8. 비밀번호",
+            id: "pw-change",
+            n: "비밀번호 변경(로그인)",
+            m: "PUT",
+            run: async () => api("PUT", "/accounts/password/", { token: a1().token, body: { email: a1().email, current_password: a1().pw, new_password: a1().pw } }),
+          },
+          {
+            g: "8. 비밀번호",
+            id: "pw-rsend",
+            n: "비밀번호 리셋 인증코드 발송",
+            m: "POST",
+            note: "password-reset/ 먼저 호출 필요 (명세에 별도 엔드포인트 없음 → email-verifications 재활용 가능성)",
+            run: async () => api("POST", "/accounts/password-reset/verify/", { body: { email: a1().email, verification_uuid: "123456" } }),
+          },
+          {
+            g: "8. 비밀번호",
+            id: "pw-rconf",
+            n: "비밀번호 리셋 확인",
+            m: "PUT",
+            run: async () => api("PUT", "/accounts/password-reset/confirm/", { body: { email: a1().email, new_password: a1().pw } }),
+          },
+
+          // ====== 정리 (삭제 테스트 - 맨 마지막에 실행) ======
+          // 대댓글 삭제
+          { g: "9. 정리", id: "rc-delete", n: "대댓글 삭제(계정2)", m: "DELETE", run: async () => {
+            return (D.studyId && D.commentId && D.recommentId) ? api("DELETE", `/study/${D.studyId}/comment/${D.commentId}/recomment/${D.recommentId}/`, { token: a2().token }) : SKIP("대댓글 없음", "DELETE", "");
+          }},
+          // 댓글 삭제
+          { g: "9. 정리", id: "cm-delete", n: "댓글 삭제(계정1)", m: "DELETE", run: async () => {
+            return (D.studyId && D.commentId) ? api("DELETE", `/study/${D.studyId}/comment/${D.commentId}/`, { token: a1().token }) : SKIP("댓글 없음", "DELETE", "");
+          }},
+          { g: "9. 정리", id: "cm-delete2", n: "댓글 삭제(계정2)", m: "DELETE", run: async () => {
+            return (D.studyId && D.comment2Id) ? api("DELETE", `/study/${D.studyId}/comment/${D.comment2Id}/`, { token: a2().token }) : SKIP("댓글2 없음", "DELETE", "");
+          }},
+          // 스터디 정리
+          { g: "9. 정리", id: "st-leave", n: "스터디 탈퇴(계정2)", m: "DELETE", run: async () => D.studyId ? api("DELETE", `/study/${D.studyId}/participate/`, { token: a2().token }) : SKIP("스터디 없음", "DELETE", "") },
+          { g: "9. 정리", id: "st-delete", n: "스터디 삭제(계정1)", m: "DELETE", run: async () => D.studyId ? api("DELETE", `/study/${D.studyId}/`, { token: a1().token }) : SKIP("스터디 없음", "DELETE", "") },
+        ];
+      }
+
+      // ── UI ──
+      function upUI(n, gone) {
+        const el = document.getElementById(`ts${n}`);
+        if (gone) {
+          el.className = "token-status no";
+          el.textContent = "● 탈퇴됨";
+        } else if (A[n].token) {
+          el.className = "token-status ok";
+          el.textContent = `● pk:${A[n].pk}`;
+        } else if (A[n].email) {
+          el.className = "token-status no";
+          el.textContent = "● 토큰만료";
+        } else {
+          el.className = "token-status no";
+          el.textContent = "● 미인증";
+        }
+        saveToLS();
+        updateAcctPanel();
+      }
+
+      function updateAcctPanel() {
+        const body = document.getElementById("acctPanelBody");
+        const activeCards = [1, 2]
+          .map((n) => {
+            const a = A[n];
+            if (!a.email) return "";
+            const tokenOk = a.token ? "🟢" : "🔴";
+            return `<div class="acct-card">
+      <h4><span class="acct-tag a${n}">계정${n}</span> ${a.name || "(이름 미설정)"} ${tokenOk}</h4>
+      <div class="info-row"><span class="lbl">email</span><span class="val">${a.email}</span></div>
+      <div class="info-row"><span class="lbl">password</span><span class="val">${a.pw}</span></div>
+      <div class="info-row"><span class="lbl">pk</span><span class="val">${a.pk || "—"}</span></div>
+      <div class="info-row"><span class="lbl">nickname</span><span class="val">${a.nick || "—"}</span></div>
+      <div class="info-row"><span class="lbl">name</span><span class="val">${a.name || "—"}</span></div>
+      <div class="info-row"><span class="lbl">토큰</span><span class="val">${a.token ? "있음 (" + a.token.slice(0, 20) + "...)" : "없음"}</span></div>
+      <div style="margin-top:6px;display:flex;gap:4px">
+        <button class="btn btn-outline" style="font-size:9.5px;padding:3px 8px" onclick="relogin(${n})">🔄 재로그인</button>
+        <button class="btn btn-outline" style="font-size:9.5px;padding:3px 8px" onclick="copyAcctInfo(${n})">📋 복사</button>
+      </div>
+    </div>`;
+          })
+          .join("");
+
+        const historyCards = acctHistory.length
+          ? `
+    <div style="width:100%;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:10px;font-weight:700;color:var(--text-muted)">📜 계정 생성 이력 (최근 ${acctHistory.length}개)</span>
+        <button class="btn btn-outline" style="font-size:9px;padding:2px 6px" onclick="clearLS()">🗑 이력 삭제</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${acctHistory
+          .map(
+            (h, i) => `
+          <div class="acct-card" style="min-width:220px;padding:8px 10px">
+            <div class="info-row"><span class="lbl">email</span><span class="val">${h.email}</span></div>
+            <div class="info-row"><span class="lbl">pw</span><span class="val">${h.pw}</span></div>
+            <div class="info-row"><span class="lbl">pk</span><span class="val">${h.pk || "—"}</span></div>
+            <div class="info-row"><span class="lbl">nick</span><span class="val">${h.nick || "—"}</span></div>
+            <div style="margin-top:4px;display:flex;gap:4px">
+              <button class="btn btn-outline" style="font-size:9px;padding:2px 6px" onclick="loadHistoryToSlot(1,${i})">→ 계정1</button>
+              <button class="btn btn-outline" style="font-size:9px;padding:2px 6px" onclick="loadHistoryToSlot(2,${i})">→ 계정2</button>
+            </div>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    </div>`
+          : "";
+
+        body.innerHTML = activeCards + historyCards;
+      }
+
+      async function relogin(n) {
+        const a = A[n];
+        if (!a.email || !a.pw) {
+          alert("이메일/비밀번호 정보가 없습니다.");
+          return;
+        }
+        const r = await api("POST", "/accounts/login/", { body: { email: a.email, password: a.pw } });
+        if (r.ok) {
+          a.token = r.data.access_token;
+          a.refresh = r.data.refresh_token;
+          a.pk = r.data.user?.pk;
+          upUI(n);
+          alert(`계정${n} 재로그인 성공! (pk:${a.pk})`);
+        } else {
+          alert(`재로그인 실패: ${JSON.stringify(r.data)}\n토큰이 만료되었거나 계정이 탈퇴되었을 수 있습니다.`);
+        }
+      }
+
+      function copyAcctInfo(n) {
+        const a = A[n];
+        const text = `[계정${n}]\nemail: ${a.email}\npassword: ${a.pw}\npk: ${a.pk}\nnickname: ${a.nick}\nname: ${a.name}\naccess_token: ${a.token}\nrefresh_token: ${a.refresh}`;
+        navigator.clipboard
+          .writeText(text)
+          .then(() => alert("클립보드에 복사됨!"))
+          .catch(() => {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            alert("복사됨!");
+          });
+      }
+
+      function loadHistoryToSlot(slot, idx) {
+        const h = acctHistory[idx];
+        if (!h) return;
+        A[slot].email = h.email;
+        A[slot].pw = h.pw;
+        A[slot].pk = h.pk;
+        A[slot].nick = h.nick || "";
+        A[slot].name = h.name || "";
+        A[slot].token = "";
+        A[slot].refresh = "";
+        document.getElementById(`e${slot}`).value = h.email;
+        document.getElementById(`p${slot}`).value = h.pw;
+        upUI(slot);
+        alert(`계정${slot}에 ${h.email} 로드 완료! "로그인" 버튼을 눌러 토큰을 발급받으세요.`);
+      }
+
+      function toggleAcctPanel() {
+        document.getElementById("acctPanel").classList.toggle("hidden");
+        updateAcctPanel();
+      }
+
+      function buildSidebar(sc) {
+        const el = document.getElementById("apiList");
+        el.innerHTML = "";
+        const gs = {};
+        sc.forEach((t) => {
+          if (!gs[t.g]) gs[t.g] = [];
+          gs[t.g].push(t);
+        });
+        let tot = 0;
+        Object.entries(gs).forEach(([name, items]) => {
+          const d = document.createElement("div");
+          d.className = "api-group";
+          const ti = document.createElement("div");
+          ti.className = "api-group-title";
+          ti.innerHTML = `${name} (${items.length}) <span class="chv">▼</span>`;
+          ti.onclick = () => ti.classList.toggle("collapsed");
+          d.appendChild(ti);
+          const id = document.createElement("div");
+          id.className = "api-group-items";
+          items.forEach((t) => {
+            tot++;
+            const it = document.createElement("div");
+            it.className = "api-item";
+            it.id = `nav-${t.id}`;
+            it.innerHTML = `<span class="method method-${t.m}">${t.m}</span><span>${t.n}</span><span class="sdot" id="dot-${t.id}"></span>`;
+            it.onclick = () => runOne(t);
+            id.appendChild(it);
+          });
+          d.appendChild(id);
+          el.appendChild(d);
+        });
+        document.getElementById("sPend").textContent = tot;
+      }
+
+      function showResult(t, r) {
+        const area = document.getElementById("resArea");
+        document.getElementById("welc")?.remove();
+        const old = document.getElementById(`res-${t.id}`);
+        if (old) old.remove();
+
+        const c = document.createElement("div");
+        c.className = "result-card";
+        c.id = `res-${t.id}`;
+        const sc = r.skip ? "sskip" : r.err ? "serr" : r.status < 300 ? "s2xx" : r.status < 500 ? "s4xx" : "s5xx";
+        const sl = r.skip ? "SKIP" : r.err ? "ERR" : r.status || "—";
+        const reqStr = r.reqBody ? `<div class="lbl">Request</div><pre>${JSON.stringify(r.reqBody, null, 2)}</pre>` : "";
+
+        c.innerHTML = `
+    <div class="result-header" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="method method-${t.m}">${t.m}</span>
+      <span class="aname">${t.n}</span>
+      <span class="path">${r.path || ""}</span>
+      <span class="sbadge ${sc}">${sl}</span>
+      <span class="time">${r.ms}ms</span>
+    </div>
+    <div class="result-body">
+      <div class="lbl">URL</div><pre>${r.url || ""}</pre>
+      ${reqStr}
+      <div class="lbl">Response</div>
+      <pre>${typeof r.data === "string" ? r.data : JSON.stringify(r.data, null, 2)}</pre>
+      ${t.note ? `<div class="rnote info">ℹ️ ${t.note}</div>` : ""}
+    </div>`;
+        area.appendChild(c);
+        area.scrollTop = area.scrollHeight;
+
+        const dot = document.getElementById(`dot-${t.id}`);
+        if (dot) {
+          if (r.skip || t.skip) dot.className = "sdot skip";
+          else if (r.ok) dot.className = "sdot pass";
+          else dot.className = "sdot fail";
+        }
+        R[t.id] = r;
+        updateStats();
+      }
+
+      function updateStats() {
+        let p = 0,
+          f = 0,
+          s = 0,
+          w = 0;
+        scenario().forEach((t) => {
+          const r = R[t.id];
+          if (!r) {
+            w++;
+            return;
+          }
+          if (r.skip || t.skip) s++;
+          else if (r.ok) p++;
+          else f++;
+        });
+        document.getElementById("sPass").textContent = p;
+        document.getElementById("sFail").textContent = f;
+        document.getElementById("sSkip").textContent = s;
+        document.getElementById("sPend").textContent = w;
+      }
+
+      async function runOne(t) {
+        document.querySelectorAll(".api-item").forEach((e) => e.classList.remove("active"));
+        document.getElementById(`nav-${t.id}`)?.classList.add("active");
+        const r = await t.run();
+        showResult(t, r);
+      }
+
+      // ── Manual register/login ──
+      async function manualRegister(n) {
+        const eEl = document.getElementById(`e${n}`),
+          pEl = document.getElementById(`p${n}`);
+        let email = eEl.value.trim(),
+          pw = pEl.value.trim();
+        if (!email) {
+          email = rEmail();
+          eEl.value = email;
+        }
+        if (!pw) {
+          pw = "Test1234!@#";
+          pEl.value = pw;
+        }
+        A[n].email = email;
+        A[n].pw = pw;
+        try {
+          let r;
+          r = await api("POST", "/accounts/email-verifications/", { body: { email } });
+          if (!r.ok) {
+            alert(`인증 발송 실패: ${JSON.stringify(r.data)}`);
+            return;
+          }
+          r = await api("POST", "/accounts/email-verifications/verify/", { body: { email, verification_number: "123456" } });
+          if (!r.ok) {
+            alert(`인증 확인 실패: ${JSON.stringify(r.data)}`);
+            return;
+          }
+          r = await api("POST", "/accounts/register/", { body: { email, password: pw } });
+          if (!r.ok) {
+            alert(`가입 실패: ${JSON.stringify(r.data)}`);
+            return;
+          }
+          r = await api("POST", "/accounts/login/", { body: { email, password: pw } });
+          if (r.ok) {
+            A[n].token = r.data.access_token;
+            A[n].refresh = r.data.refresh_token;
+            A[n].pk = r.data.user?.pk;
+            A[n].nick = rNick();
+            A[n].name = rName(n);
+            await api("PUT", `/accounts/profiles/${A[n].pk}/`, {
+              token: A[n].token,
+              body: {
+                name: A[n].name,
+                nickname: A[n].nick,
+                phone: rPhone(),
+                introduction: `계정${n}`,
+                preferred_region: { id: 1 },
+              },
+            });
+            addToHistory(n);
+            upUI(n);
+            alert(`계정${n} 가입+로그인 완료! (pk:${A[n].pk})`);
+          } else {
+            alert(`로그인 실패: ${JSON.stringify(r.data)}`);
+          }
+        } catch (e) {
+          alert(`오류: ${e.message}`);
+        }
+      }
+
+      async function manualLogin(n) {
+        const email = document.getElementById(`e${n}`).value.trim();
+        const pw = document.getElementById(`p${n}`).value.trim();
+        if (!email || !pw) {
+          alert("이메일/비밀번호 입력");
+          return;
+        }
+        A[n].email = email;
+        A[n].pw = pw;
+        const r = await api("POST", "/accounts/login/", { body: { email, password: pw } });
+        if (r.ok) {
+          A[n].token = r.data.access_token;
+          A[n].refresh = r.data.refresh_token;
+          A[n].pk = r.data.user?.pk;
+          addToHistory(n);
+          upUI(n);
+          alert(`로그인 성공 (pk:${A[n].pk})`);
+        } else alert(`실패: ${JSON.stringify(r.data)}`);
+      }
+
+      // ── Run All ──
+      async function runAll() {
+        const btn = document.getElementById("runBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> 실행 중...';
+        const bar = document.getElementById("pbar"),
+          fill = document.getElementById("pfill");
+        bar.classList.add("active");
+
+        R = {};
+        D = {};
+        document.getElementById("resArea").innerHTML = "";
+
+        const pw = "AutoTest1234!@#";
+        A[1] = { email: rEmail(), pw, token: "", refresh: "", pk: null, nick: "", name: "" };
+        A[2] = { email: rEmail(), pw, token: "", refresh: "", pk: null, nick: "", name: "" };
+        document.getElementById("e1").value = A[1].email;
+        document.getElementById("p1").value = pw;
+        document.getElementById("e2").value = A[2].email;
+        document.getElementById("p2").value = pw;
+        upUI(1);
+        upUI(2);
+
+        // 계정 정보 패널 자동 열기
+        document.getElementById("acctPanel").classList.remove("hidden");
+
+        const sc = scenario();
+        buildSidebar(sc);
+
+        for (let i = 0; i < sc.length; i++) {
+          fill.style.width = `${((i + 1) / sc.length) * 100}%`;
+          try {
+            const r = await sc[i].run();
+            showResult(sc[i], r);
+          } catch (e) {
+            showResult(sc[i], { ok: false, status: 0, data: { error: e.message }, ms: 0, method: sc[i].m, path: "", err: true });
+          }
+          updateAcctPanel();
+          await new Promise((r) => setTimeout(r, 200));
+        }
+
+        // Summary
+        let p = 0,
+          f = 0,
+          s = 0;
+        sc.forEach((t) => {
+          const r = R[t.id];
+          if (!r) return;
+          if (r.skip || t.skip) s++;
+          else if (r.ok) p++;
+          else f++;
+        });
+        const sm = document.createElement("div");
+        sm.className = "summary-card";
+        sm.innerHTML = `
+    <div class="summary-stat"><div class="num">${sc.length}</div><div class="slbl">전체</div></div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat"><div class="num green">${p}</div><div class="slbl">성공</div></div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat"><div class="num red">${f}</div><div class="slbl">실패</div></div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat"><div class="num yellow">${s}</div><div class="slbl">스킵</div></div>`;
+        const area = document.getElementById("resArea");
+        area.insertBefore(sm, area.firstChild);
+
+        bar.classList.remove("active");
+        btn.disabled = false;
+        btn.innerHTML = "▶ 전체 테스트 실행";
+      }
+
+      function clearAll() {
+        R = {};
+        document.getElementById("resArea").innerHTML = `<div class="welcome" id="welc"><div class="icon">⚡</div><h2>스터디인 API 전체 테스트</h2><p>"전체 테스트 실행" 버튼을 누르세요</p></div>`;
+        document.querySelectorAll(".sdot").forEach((d) => (d.className = "sdot"));
+        updateStats();
+      }
+
+      buildSidebar(scenario());
+      // 페이지 로드 시 localStorage에서 계정 정보 복원
+      const restored = loadFromLS();
+      if (restored && (A[1].email || A[2].email)) {
+        document.getElementById("acctPanel").classList.remove("hidden");
+        updateAcctPanel();
+        // 토큰이 있으면 유효한지 확인은 안 함 (만료되었을 수 있으므로 재로그인 유도)
+        const msg = [];
+        if (A[1].email) msg.push(`계정1: ${A[1].email}`);
+        if (A[2].email) msg.push(`계정2: ${A[2].email}`);
+        console.log("📦 저장된 계정 정보 복원:", msg.join(", "));
+      }
+    </script>
+  </body>
+</html>

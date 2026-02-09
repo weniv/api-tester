@@ -1,80 +1,1880 @@
 <!DOCTYPE html>
 <html lang="ko">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="style.css" />
-        <script src="app.js" defer></script>
-        <title>API 테스터</title>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🧪 API 테스터</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Tester</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-primary: #0c0e13;
+        --bg-secondary: #14171e;
+        --bg-tertiary: #1a1e28;
+        --border-primary: #252a36;
+        --border-hover: #3a4158;
+        --text-primary: #e2e6f0;
+        --text-secondary: #7b8298;
+        --text-muted: #4a5068;
+        --accent: #6c8cff;
+        --accent-dim: #4a6ae0;
+        --accent-bg: rgba(108, 140, 255, 0.08);
+        --green: #34d399;
+        --green-bg: rgba(52, 211, 153, 0.08);
+        --green-border: rgba(52, 211, 153, 0.2);
+        --red: #f87171;
+        --red-bg: rgba(248, 113, 113, 0.08);
+        --red-border: rgba(248, 113, 113, 0.2);
+        --yellow: #fbbf24;
+        --yellow-bg: rgba(251, 191, 36, 0.08);
+        --purple: #a78bfa;
+        --purple-bg: rgba(167, 139, 250, 0.08);
+        --method-get-bg: rgba(52, 211, 153, 0.12);
+        --method-post-bg: rgba(108, 140, 255, 0.12);
+        --method-put-bg: rgba(251, 191, 36, 0.12);
+        --method-patch-bg: rgba(167, 139, 250, 0.12);
+        --method-delete-bg: rgba(248, 113, 113, 0.12);
+        --sidebar-width: 300px;
+      }
 
-            <!-- 테스트 입력 섹션 -->
-            <div class="section">
-                <h2>🚀 테스트 실행</h2>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
 
-                <div class="input-group">
-                    <input type="text" id="baseUrl" placeholder="Base URL (예: http://localhost:8000)" value="http://localhost:8000" />
-                    <input type="text" id="authToken" placeholder="Authorization Token (선택)" />
-                </div>
+      body {
+        font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
 
-                <div class="input-group">
-                    <select id="testMethod" class="method-select">
-                        <option value="GET">GET</option>
-                        <option value="POST" selected>POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="PATCH">PATCH</option>
-                        <option value="DELETE">DELETE</option>
-                    </select>
-                    <input type="text" id="testEndpoint" placeholder="Endpoint (예: /accounts/register/)" oninput="onEndpointInput()" />
-                    <input type="number" id="testExpectedStatus" placeholder="예상 상태코드" value="200" style="width: 100px" />
-                </div>
+      .app {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
 
-                <div class="suggestion" style="margin-bottom: 10px">
-                    <input type="text" id="testName" placeholder="테스트 이름 (예: 회원가입 - 정상)" style="width: 100%" onfocus="showNameSuggestions()" oninput="filterNameSuggestions()" />
-                    <div class="suggestion-list" id="nameSuggestions"></div>
-                </div>
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border-primary);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
-                <div style="margin-bottom: 10px">
-                    <label>Request Headers (JSON, 선택) - Content-Type은 기본 포함</label>
-                    <textarea id="testHeaders" placeholder='{"X-Custom-Header": "value"}' style="min-height: 50px"></textarea>
-                </div>
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-primary);
+      }
 
-                <div style="margin-bottom: 10px">
-                    <label>Request Body (JSON)</label>
-                    <textarea id="testBody" placeholder='{"email": "test@example.com", "password": "password123"}'></textarea>
-                </div>
+      .sidebar-header h1 {
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-                <div style="margin-bottom: 15px">
-                    <label>Expected Response (검증할 필드, 선택)</label>
-                    <textarea id="testExpectedResponse" placeholder='{"detail": null}'></textarea>
-                </div>
+      .sidebar-header h1 .title {
+        background: linear-gradient(135deg, var(--accent), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
 
-                <button onclick="runTest()" id="runBtn" style="width: 100%; padding: 15px">🚀 테스트 실행</button>
-            </div>
+      .sidebar-stats {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
 
-            <!-- 결과 섹션 -->
-            <div class="section">
-                <h2>📊 테스트 결과</h2>
-                <div id="resultContainer">
-                    <div class="empty-state">테스트를 실행하면 결과가 여기에 표시됩니다.</div>
-                </div>
-            </div>
+      .stat-chip {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 3px 8px;
+        border-radius: 100px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
 
-            <!-- 히스토리 섹션 -->
-            <div class="section">
-                <h2>
-                    📜 테스트 히스토리
-                    <button class="btn-secondary btn-small" onclick="clearHistory()">전체 삭제</button>
-                </h2>
-                <div id="historyContainer">
-                    <div class="empty-state">저장된 테스트 히스토리가 없습니다.</div>
-                </div>
-            </div>
+      .stat-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .stat-chip.pass { background: var(--green-bg); color: var(--green); }
+      .stat-chip.fail { background: var(--red-bg); color: var(--red); }
+      .stat-chip.skip { background: var(--yellow-bg); color: var(--yellow); }
+      .stat-chip.pending { background: var(--accent-bg); color: var(--accent); }
+
+      .api-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 4px;
+      }
+
+      .api-list::-webkit-scrollbar { width: 4px; }
+      .api-list::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 4px; }
+
+      .api-group-title {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 10px 8px 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        user-select: none;
+      }
+
+      .api-group-title:hover { color: var(--text-secondary); }
+      .api-group-title .chevron { font-size: 8px; transition: transform 0.2s; }
+      .api-group-title.collapsed .chevron { transform: rotate(-90deg); }
+      .api-group-title.collapsed + .api-group-items { display: none; }
+
+      .api-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 11px;
+        color: var(--text-secondary);
+        transition: all 0.12s;
+      }
+
+      .api-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+      .api-item.active { background: var(--accent-bg); color: var(--accent); }
+      .api-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .status-dot.pass { background: var(--green); }
+      .status-dot.fail { background: var(--red); }
+      .status-dot.pending { background: var(--text-muted); }
+
+      .sidebar-bottom {
+        padding: 12px;
+        border-top: 1px solid var(--border-primary);
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      /* Main */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .toolbar {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-primary);
+        background: var(--bg-secondary);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .toolbar-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      .test-panel, .result-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .test-panel { border-right: 1px solid var(--border-primary); }
+
+      .panel-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-primary);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .panel-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      .panel-body::-webkit-scrollbar { width: 4px; }
+      .panel-body::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 4px; }
+
+      /* Form */
+      .form-group { margin-bottom: 12px; }
+
+      .form-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .input, .select, .textarea {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        padding: 8px 12px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        border-radius: 6px;
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color 0.12s;
+      }
+
+      .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); }
+      .input::placeholder, .textarea::placeholder { color: var(--text-muted); }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input-group .input { flex: 1; }
+
+      .textarea {
+        min-height: 100px;
+        resize: vertical;
+        width: 100%;
+      }
+
+      /* Buttons */
+      .btn {
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+
+      .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover:not(:disabled) { background: var(--accent-dim); }
+      .btn-success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+      .btn-success:hover:not(:disabled) { background: rgba(52, 211, 153, 0.15); }
+      .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+      .btn-outline { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-primary); }
+      .btn-outline:hover:not(:disabled) { border-color: var(--border-hover); color: var(--text-primary); }
+      .btn-sm { font-size: 10px; padding: 4px 8px; }
+
+      /* Method Badge */
+      .method-badge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        min-width: 36px;
+        text-align: center;
+      }
+
+      .method-GET { background: var(--method-get-bg); color: var(--green); }
+      .method-POST { background: var(--method-post-bg); color: var(--accent); }
+      .method-PUT { background: var(--method-put-bg); color: var(--yellow); }
+      .method-PATCH { background: var(--method-patch-bg); color: var(--purple); }
+      .method-DELETE { background: var(--method-delete-bg); color: var(--red); }
+
+      /* Account */
+      .account-tag {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: var(--accent-bg);
+        color: var(--accent);
+      }
+
+      .token-status {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 100px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .token-status.ok { background: var(--green-bg); color: var(--green); }
+      .token-status.no { background: var(--red-bg); color: var(--red); }
+
+      /* Account List */
+      .account-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .account-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        border-radius: 6px;
+      }
+
+      .account-row .account-name {
+        font-size: 11px;
+        font-weight: 600;
+        min-width: 60px;
+        color: var(--text-secondary);
+      }
+
+      .account-row .account-email {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--text-muted);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .account-compact {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      /* Env */
+      .env-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .env-badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: var(--purple-bg);
+        color: var(--purple);
+      }
+
+      /* Progress */
+      .progress-bar {
+        height: 3px;
+        background: var(--border-primary);
+        overflow: hidden;
+        display: none;
+      }
+
+      .progress-bar.active { display: block; }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--green));
+        border-radius: 2px;
+        transition: width 0.3s;
+        width: 0%;
+      }
+
+      /* Result Card */
+      .result-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        overflow: hidden;
+        animation: slideIn 0.18s ease-out;
+      }
+
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .result-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .result-header:hover { background: var(--bg-tertiary); }
+      .result-header .name { font-size: 11px; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .result-header .path { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .result-header .time { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--text-muted); }
+
+      .status-badge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 100px;
+      }
+
+      .status-2xx { background: var(--green-bg); color: var(--green); }
+      .status-4xx { background: var(--yellow-bg); color: var(--yellow); }
+      .status-5xx { background: var(--red-bg); color: var(--red); }
+      .status-err { background: var(--red-bg); color: var(--red); }
+
+      .result-body {
+        padding: 12px;
+        display: none;
+        border-top: 1px solid var(--border-primary);
+      }
+
+      .result-body.open { display: block; }
+
+      .result-body pre {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 8px;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        border: 1px solid var(--border-primary);
+      }
+
+      .result-section { margin-bottom: 12px; }
+      .result-section:last-child { margin-bottom: 0; }
+
+      .result-section-title {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+      }
+
+      /* Summary */
+      .summary-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .summary-stat { text-align: center; }
+      .summary-stat .num { font-family: "JetBrains Mono", monospace; font-size: 24px; font-weight: 700; }
+      .summary-stat .label { font-size: 10px; color: var(--text-muted); }
+      .summary-stat .num.green { color: var(--green); }
+      .summary-stat .num.red { color: var(--red); }
+      .summary-divider { width: 1px; height: 32px; background: var(--border-primary); }
+
+      /* Welcome */
+      .welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        color: var(--text-muted);
+      }
+
+      .welcome .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+      .welcome h2 { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
+      .welcome p { font-size: 12px; max-width: 400px; line-height: 1.8; }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+      }
+
+      .modal-overlay.active { opacity: 1; visibility: visible; }
+
+      .modal {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow: hidden;
+        transform: scale(0.95);
+        transition: transform 0.2s;
+      }
+
+      .modal-overlay.active .modal { transform: scale(1); }
+
+      .modal-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modal-title { font-size: 14px; font-weight: 600; }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px;
+        font-size: 18px;
+      }
+
+      .modal-close:hover { color: var(--text-primary); }
+      .modal-body { padding: 16px; overflow-y: auto; max-height: 60vh; }
+
+      .modal-footer {
+        padding: 16px;
+        border-top: 1px solid var(--border-primary);
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .env-item {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+      }
+
+      .env-item .env-name { font-weight: 600; margin-bottom: 8px; }
+      .env-item code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--green);
+        color: #000;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.2s;
+        z-index: 1001;
+      }
+
+      .toast.show { opacity: 1; transform: translateY(0); }
+      .toast.error { background: var(--red); color: #fff; }
+
+      .empty-state { text-align: center; padding: 24px; color: var(--text-muted); }
+
+      .spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--border-primary);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      @media (max-width: 900px) {
+        .content { flex-direction: column; }
+        .test-panel { border-right: none; border-bottom: 1px solid var(--border-primary); max-height: 50vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1>
+            <span>API</span>
+            <span class="title">Tester</span>
+          </h1>
+          <div class="sidebar-stats">
+            <span class="stat-chip pass"><span class="dot"></span><span id="statsPass">0</span></span>
+            <span class="stat-chip fail"><span class="dot"></span><span id="statsFail">0</span></span>
+            <span class="stat-chip skip"><span class="dot"></span><span id="statsSkip">0</span></span>
+            <span class="stat-chip pending"><span class="dot"></span><span id="statsPending">0</span></span>
+          </div>
         </div>
 
-        <div class="save-indicator" id="saveIndicator">✅ 저장됨</div>
-    </body>
+        <div class="api-list" id="apiList">
+          <div class="empty-state">컬렉션을 추가하세요</div>
+        </div>
+
+        <div class="sidebar-bottom">
+          <button class="btn btn-outline btn-sm" onclick="App.createCollection()">+ 컬렉션</button>
+          <button class="btn btn-outline btn-sm" onclick="App.importCollection()">가져오기</button>
+          <button class="btn btn-outline btn-sm" onclick="App.clearAll()">결과 초기화</button>
+          <button class="btn btn-danger btn-sm" onclick="Migration.reset()">전체 리셋</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main">
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <div class="env-selector">
+              <span class="env-badge">ENV</span>
+              <select id="envSelect" class="select" style="width: 120px"></select>
+              <button class="btn btn-outline btn-sm" onclick="App.openEnvModal()">설정</button>
+            </div>
+            <input type="text" id="baseUrl" class="input" style="flex: 1; max-width: 400px" placeholder="Base URL (예: http://localhost:8000)" value="http://localhost:8000" />
+          </div>
+
+          <div class="toolbar-row" id="accountsRow">
+            <!-- 계정 목록이 동적으로 렌더링됨 -->
+          </div>
+
+          <div class="toolbar-row" id="variablesRow" style="display: none;">
+            <span class="env-badge">VAR</span>
+            <div id="variablesList" class="account-compact" style="font-size: 10px; color: var(--text-secondary);"></div>
+            <button class="btn btn-outline btn-sm" onclick="App.clearVariables()">변수 초기화</button>
+          </div>
+
+          <div class="toolbar-row">
+            <button class="btn btn-success" id="runBtn" onclick="App.runCurrentTest()">▶ 테스트 실행</button>
+            <button class="btn btn-primary" id="runAllBtn" onclick="App.runAllTests()">▶ 전체 실행</button>
+            <button class="btn btn-outline" onclick="App.saveTestToCollection()">저장</button>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <!-- Content Area -->
+        <div class="content">
+          <!-- Test Panel -->
+          <div class="test-panel">
+            <div class="panel-header">
+              <span>테스트 설정</span>
+              <button class="btn btn-outline btn-sm" onclick="App.clearForm()">초기화</button>
+            </div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="form-label">테스트 이름</label>
+                <input type="text" id="testName" class="input" style="width: 100%" placeholder="테스트 이름 (선택)" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">요청</label>
+                <div class="input-group">
+                  <select id="testMethod" class="select" style="width: 100px">
+                    <option value="GET">GET</option>
+                    <option value="POST" selected>POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                  <input type="text" id="testEndpoint" class="input" placeholder="Endpoint (예: /api/users/)" />
+                  <input type="number" id="expectedStatus" class="input" style="width: 80px" placeholder="상태" value="200" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">인증 계정</label>
+                <select id="testAccountId" class="select" style="width: 100%">
+                  <option value="">인증 없음</option>
+                  <!-- 계정 목록이 동적으로 추가됨 -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Headers (JSON)</label>
+                <textarea id="testHeaders" class="textarea" style="min-height: 60px" placeholder='{"Authorization": "Bearer {{token}}"}'></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Body (JSON)</label>
+                <textarea id="testBody" class="textarea" placeholder='{"email": "test@example.com", "password": "password123"}'></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">변수 추출 (JSON)</label>
+                <textarea id="extractRules" class="textarea" style="min-height: 60px" placeholder='{"token": "$.access_token", "userId": "$.user.id"}'></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result Panel -->
+          <div class="result-panel">
+            <div class="panel-header">
+              <span>결과</span>
+              <button class="btn btn-outline btn-sm" onclick="App.clearResults()">지우기</button>
+            </div>
+            <div class="panel-body" id="resultPanel">
+              <div class="welcome" id="welcomeScreen">
+                <div class="icon">⚡</div>
+                <h2>API Tester</h2>
+                <p>
+                  테스트를 작성하고 실행하세요.<br />
+                  컬렉션으로 테스트를 그룹화하고,<br />
+                  환경 변수로 설정을 관리하세요.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Environment Modal -->
+    <div class="modal-overlay" id="envModal">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">환경 설정</span>
+          <button class="modal-close" onclick="App.closeModal('envModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="envList"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="App.closeModal('envModal')">닫기</button>
+          <button class="btn btn-primary" onclick="App.addEnv()">+ 환경 추가</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div class="modal-overlay" id="accountModal">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">계정 관리</span>
+          <button class="modal-close" onclick="App.closeModal('accountModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="account-list" id="accountList"></div>
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-primary);">
+            <div class="form-label">새 계정 추가</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <input type="text" id="newAccountName" class="input" placeholder="계정 이름 (예: 관리자)" />
+              <input type="email" id="newAccountEmail" class="input" placeholder="이메일" />
+              <input type="password" id="newAccountPassword" class="input" placeholder="비밀번호" />
+              <button class="btn btn-primary" onclick="App.addAccount()">계정 추가 및 로그인</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="App.closeModal('accountModal')">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ==================== Storage ====================
+      const STORAGE_KEYS = {
+        CONFIG: "apiTester_config",
+        COLLECTIONS: "apiTester_collections",
+        ENVIRONMENTS: "apiTester_environments",
+        ACCOUNTS: "apiTester_accounts",
+        VERSION: "apiTester_version",
+      };
+
+      const CURRENT_VERSION = 2; // 리팩토링 버전
+
+      const Storage = {
+        save(key, data) {
+          try { localStorage.setItem(key, JSON.stringify(data)); return true; }
+          catch (e) { console.error("Storage save failed:", e); return false; }
+        },
+        load(key, defaultValue = null) {
+          try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+          } catch (e) { return defaultValue; }
+        },
+        remove(key) {
+          try { localStorage.removeItem(key); return true; }
+          catch (e) { return false; }
+        }
+      };
+
+      // ==================== Migration ====================
+      const Migration = {
+        run() {
+          const savedVersion = Storage.load(STORAGE_KEYS.VERSION, 1);
+
+          if (savedVersion < CURRENT_VERSION) {
+            console.log(`Migrating from version ${savedVersion} to ${CURRENT_VERSION}`);
+            this.migrateAccounts();
+            this.migrateCollections();
+            this.migrateEnvironments();
+            this.cleanupOldData();
+            Storage.save(STORAGE_KEYS.VERSION, CURRENT_VERSION);
+            console.log("Migration completed");
+          }
+        },
+
+        migrateAccounts() {
+          try {
+            const oldAccounts = Storage.load(STORAGE_KEYS.ACCOUNTS, null);
+
+            if (!oldAccounts) return;
+
+            // 기존 형식: {1: {email, password, token...}, 2: {...}}
+            // 새 형식: {1: {id, name, email, password, token, pk...}}
+            const newAccounts = {};
+
+            for (const [key, account] of Object.entries(oldAccounts)) {
+              const id = parseInt(key) || parseInt(account.id) || Date.now();
+              newAccounts[id] = {
+                id: id,
+                name: account.name || `계정${id}`,
+                email: account.email || "",
+                password: account.password || "",
+                token: account.token || account.access_token || "",
+                refresh: account.refresh || account.refresh_token || "",
+                pk: account.pk || account.user_id || null
+              };
+            }
+
+            Storage.save(STORAGE_KEYS.ACCOUNTS, newAccounts);
+            console.log("Accounts migrated:", Object.keys(newAccounts).length);
+          } catch (e) {
+            console.error("Account migration failed:", e);
+            Storage.save(STORAGE_KEYS.ACCOUNTS, {});
+          }
+        },
+
+        migrateCollections() {
+          try {
+            const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, null);
+
+            if (!collections || !Array.isArray(collections)) {
+              Storage.save(STORAGE_KEYS.COLLECTIONS, []);
+              return;
+            }
+
+            // 각 컬렉션과 테스트에 필수 필드 확인/추가
+            const migratedCollections = collections.map(col => {
+              if (!col || typeof col !== 'object') return null;
+
+              return {
+                id: col.id || `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: col.name || "Unnamed Collection",
+                tests: Array.isArray(col.tests) ? col.tests.map(test => {
+                  if (!test || typeof test !== 'object') return null;
+                  return {
+                    id: test.id || `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    name: test.name || `${test.method || 'GET'} ${test.endpoint || '/'}`,
+                    method: test.method || "GET",
+                    endpoint: test.endpoint || "",
+                    headers: test.headers || null,
+                    body: test.body || null,
+                    expectedStatus: parseInt(test.expectedStatus) || 200,
+                    extract: test.extract || null,
+                    accountId: test.accountId || null
+                  };
+                }).filter(Boolean) : [],
+                createdAt: col.createdAt || new Date().toISOString()
+              };
+            }).filter(Boolean);
+
+            Storage.save(STORAGE_KEYS.COLLECTIONS, migratedCollections);
+            console.log("Collections migrated:", migratedCollections.length);
+          } catch (e) {
+            console.error("Collection migration failed:", e);
+            Storage.save(STORAGE_KEYS.COLLECTIONS, []);
+          }
+        },
+
+        migrateEnvironments() {
+          try {
+            const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, null);
+
+            if (!envs || typeof envs !== 'object') {
+              Storage.save(STORAGE_KEYS.ENVIRONMENTS, {
+                default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } }
+              });
+              return;
+            }
+
+            // 각 환경에 필수 필드 확인
+            const migratedEnvs = {};
+            for (const [id, env] of Object.entries(envs)) {
+              if (!env || typeof env !== 'object') continue;
+              migratedEnvs[id] = {
+                name: env.name || id,
+                variables: env.variables && typeof env.variables === 'object'
+                  ? env.variables
+                  : { BASE_URL: "http://localhost:8000" }
+              };
+            }
+
+            // default 환경이 없으면 추가
+            if (!migratedEnvs.default) {
+              migratedEnvs.default = { name: "Default", variables: { BASE_URL: "http://localhost:8000" } };
+            }
+
+            Storage.save(STORAGE_KEYS.ENVIRONMENTS, migratedEnvs);
+            console.log("Environments migrated:", Object.keys(migratedEnvs).length);
+          } catch (e) {
+            console.error("Environment migration failed:", e);
+            Storage.save(STORAGE_KEYS.ENVIRONMENTS, {
+              default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } }
+            });
+          }
+        },
+
+        cleanupOldData() {
+          // 기존 버전에서 사용하던 키들 정리
+          const oldKeys = [
+            "apiTester_history",  // 히스토리는 더 이상 사용 안 함
+            "apiTester_variables" // 런타임 변수는 저장 안 함
+          ];
+
+          oldKeys.forEach(key => {
+            if (localStorage.getItem(key)) {
+              console.log(`Removing old key: ${key}`);
+              Storage.remove(key);
+            }
+          });
+        },
+
+        // 데이터 완전 초기화 (문제 발생 시 사용)
+        reset() {
+          if (!confirm("모든 저장된 데이터를 초기화하시겠습니까?\n(컬렉션, 계정, 환경 설정 모두 삭제됩니다)")) return;
+
+          Object.values(STORAGE_KEYS).forEach(key => Storage.remove(key));
+          location.reload();
+        }
+      };
+
+      // ==================== Variables (Runtime) ====================
+      const Variables = {
+        runtime: {},
+        set(key, value) { this.runtime[key] = value; },
+        get(key) {
+          if (key in this.runtime) return this.runtime[key];
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { variables: {} } });
+          const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
+          return envs[config.currentEnv]?.variables?.[key] || "";
+        },
+        clear() { this.runtime = {}; },
+        interpolate(str) {
+          if (typeof str !== "string") return str;
+          return str.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+            const value = this.get(varName);
+            return value !== undefined ? value : match;
+          });
+        },
+        interpolateObject(obj) {
+          if (typeof obj === "string") return this.interpolate(obj);
+          if (Array.isArray(obj)) return obj.map(item => this.interpolateObject(item));
+          if (obj && typeof obj === "object") {
+            const result = {};
+            for (const [key, value] of Object.entries(obj)) result[key] = this.interpolateObject(value);
+            return result;
+          }
+          return obj;
+        }
+      };
+
+      // ==================== App ====================
+      const App = {
+        state: {
+          currentCollection: null,
+          currentTest: null,
+          results: {},
+          isRunning: false
+        },
+
+        init() {
+          // 기존 데이터 마이그레이션
+          Migration.run();
+
+          this.loadState();
+          this.render();
+          this.renderVariables();
+          console.log("API Tester initialized!");
+        },
+
+        loadState() {
+          // 계정이 없으면 기본 계정 1개 생성
+          let accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          if (Object.keys(accounts).length === 0) {
+            accounts = { 1: { id: 1, name: "계정1", email: "", password: "", token: "", pk: null } };
+            Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+          }
+
+          this.renderAccountsRow();
+          this.renderAccountSelect();
+
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } } });
+          const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
+
+          const baseUrl = envs[config.currentEnv]?.variables?.BASE_URL || "http://localhost:8000";
+          document.getElementById("baseUrl").value = baseUrl;
+          Variables.set("BASE_URL", baseUrl);
+
+          this.renderEnvSelect(envs, config.currentEnv);
+        },
+
+        render() {
+          const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          this.renderApiList(collections);
+          this.updateStats();
+        },
+
+        // ==================== UI Helpers ====================
+        showToast(message, type = "success") {
+          const toast = document.getElementById("toast");
+          toast.textContent = message;
+          toast.className = `toast ${type} show`;
+          setTimeout(() => toast.classList.remove("show"), 2000);
+        },
+
+        openModal(id) { document.getElementById(id)?.classList.add("active"); },
+        closeModal(id) { document.getElementById(id)?.classList.remove("active"); },
+
+        updateStats() {
+          const results = Object.values(this.state.results);
+          const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          const totalTests = collections.reduce((sum, col) => sum + (col.tests?.length || 0), 0);
+
+          document.getElementById("statsPass").textContent = results.filter(r => r.testPassed).length;
+          document.getElementById("statsFail").textContent = results.filter(r => !r.testPassed && !r.skip).length;
+          document.getElementById("statsSkip").textContent = results.filter(r => r.skip).length;
+          document.getElementById("statsPending").textContent = Math.max(0, totalTests - results.length);
+        },
+
+        // ==================== Account Rendering ====================
+        renderAccountsRow() {
+          const container = document.getElementById("accountsRow");
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const accountList = Object.values(accounts);
+
+          // 첫 번째 계정 (또는 없으면 생성)
+          let firstAccount = accountList[0];
+          if (!firstAccount) {
+            firstAccount = { id: 1, name: "계정1", email: "", password: "", token: "", pk: null };
+            accounts[1] = firstAccount;
+            Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+          }
+
+          // 인증된 계정들 표시
+          const authenticatedAccounts = accountList.filter(acc => acc.token);
+          const authBadges = authenticatedAccounts.map(acc =>
+            `<span class="token-status ok">● ${this.escapeHtml(acc.name || '계정' + acc.id)}: ${acc.email?.split('@')[0] || 'pk:' + acc.pk}</span>`
+          ).join('');
+
+          container.innerHTML = `
+            <div class="account-compact" style="flex: 1; gap: 8px;">
+              <span class="account-tag">${this.escapeHtml(firstAccount.name || '계정1')}</span>
+              <input type="email" id="accountEmail1" class="input" style="width: 180px; padding: 4px 8px;"
+                     placeholder="이메일" value="${this.escapeHtml(firstAccount.email || '')}" />
+              <input type="password" id="accountPassword1" class="input" style="width: 120px; padding: 4px 8px;"
+                     placeholder="비밀번호" value="${this.escapeHtml(firstAccount.password || '')}" />
+              <button class="btn ${firstAccount.token ? 'btn-success' : 'btn-primary'} btn-sm" onclick="App.loginAccountFromToolbar(${firstAccount.id})">
+                ${firstAccount.token ? '✓ 인증됨' : '로그인'}
+              </button>
+              ${accountList.length > 1 ? authBadges : ''}
+              <button class="btn btn-outline btn-sm" onclick="App.openAccountModal()">계정 관리</button>
+            </div>
+          `;
+        },
+
+        async loginAccountFromToolbar(id) {
+          const email = document.getElementById("accountEmail1").value.trim();
+          const password = document.getElementById("accountPassword1").value;
+
+          if (!email || !password) {
+            this.showToast("이메일과 비밀번호를 입력해주세요", "error");
+            return;
+          }
+
+          // 계정 정보 저장
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          accounts[id] = { ...accounts[id], email, password };
+          Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+
+          // 로그인 시도
+          await this.loginAccount(id);
+        },
+
+        renderAccountSelect() {
+          const select = document.getElementById("testAccountId");
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const accountList = Object.values(accounts);
+
+          select.innerHTML = `
+            <option value="">인증 없음</option>
+            ${accountList.map(acc => `
+              <option value="${acc.id}" ${!acc.token ? 'disabled' : ''}>
+                ${this.escapeHtml(acc.name || `계정${acc.id}`)} ${acc.token ? `(${acc.email?.split('@')[0] || ''})` : '(미인증)'}
+              </option>
+            `).join('')}
+          `;
+        },
+
+        openAccountModal() {
+          this.openModal("accountModal");
+          this.renderAccountList();
+        },
+
+        renderAccountList() {
+          const container = document.getElementById("accountList");
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const accountList = Object.values(accounts);
+
+          if (accountList.length === 0) {
+            container.innerHTML = '<div class="empty-state">등록된 계정이 없습니다</div>';
+            return;
+          }
+
+          container.innerHTML = accountList.map(acc => `
+            <div class="account-row">
+              <span class="account-name">${this.escapeHtml(acc.name || `계정${acc.id}`)}</span>
+              <span class="account-email">${this.escapeHtml(acc.email || '(이메일 없음)')}</span>
+              <span class="token-status ${acc.token ? 'ok' : 'no'}">
+                ${acc.token ? '● 인증됨' : '● 미인증'}
+              </span>
+              ${!acc.token && acc.email ? `
+                <button class="btn btn-primary btn-sm" onclick="App.loginAccount(${acc.id})">로그인</button>
+              ` : ''}
+              <button class="btn btn-danger btn-sm" onclick="App.deleteAccount(${acc.id})">삭제</button>
+            </div>
+          `).join('');
+        },
+
+        renderEnvSelect(envs, currentEnv) {
+          const select = document.getElementById("envSelect");
+          select.innerHTML = Object.entries(envs).map(([id, env]) =>
+            `<option value="${id}" ${id === currentEnv ? "selected" : ""}>${this.escapeHtml(env.name)}</option>`
+          ).join("");
+
+          select.onchange = (e) => {
+            Storage.save(STORAGE_KEYS.CONFIG, { currentEnv: e.target.value });
+            const baseUrl = envs[e.target.value]?.variables?.BASE_URL || "";
+            document.getElementById("baseUrl").value = baseUrl;
+            Variables.set("BASE_URL", baseUrl);
+            this.showToast("환경이 변경되었습니다");
+          };
+        },
+
+        renderApiList(collections) {
+          const container = document.getElementById("apiList");
+          if (!collections.length) {
+            container.innerHTML = '<div class="empty-state">컬렉션을 추가하세요</div>';
+            return;
+          }
+
+          container.innerHTML = collections.map(col => `
+            <div class="api-group" data-collection-id="${col.id}">
+              <div class="api-group-title" onclick="this.classList.toggle('collapsed')">
+                <span>${this.escapeHtml(col.name)} (${col.tests?.length || 0})</span>
+                <span class="chevron">▼</span>
+              </div>
+              <div class="api-group-items">
+                ${(col.tests || []).map(test => `
+                  <div class="api-item ${this.state.results[test.id]?.active ? 'active' : ''}"
+                       data-test-id="${test.id}"
+                       onclick="App.selectTest('${col.id}', '${test.id}')">
+                    <span class="method-badge method-${test.method}">${test.method}</span>
+                    <span class="name">${this.escapeHtml(test.name)}</span>
+                    <span class="status-dot ${this.getStatusClass(test.id)}"></span>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `).join("");
+        },
+
+        getStatusClass(testId) {
+          const result = this.state.results[testId];
+          if (!result) return "pending";
+          return result.testPassed ? "pass" : "fail";
+        },
+
+        // ==================== Test Operations ====================
+        selectTest(collectionId, testId) {
+          const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          const collection = collections.find(c => c.id === collectionId);
+          const test = collection?.tests?.find(t => t.id === testId);
+
+          if (test) {
+            this.state.currentCollection = collectionId;
+            this.state.currentTest = testId;
+
+            document.getElementById("testName").value = test.name || "";
+            document.getElementById("testMethod").value = test.method || "GET";
+            document.getElementById("testEndpoint").value = test.endpoint || "";
+            document.getElementById("testHeaders").value = test.headers ? JSON.stringify(test.headers, null, 2) : "";
+            document.getElementById("testBody").value = test.body ? JSON.stringify(test.body, null, 2) : "";
+            document.getElementById("expectedStatus").value = test.expectedStatus || 200;
+            document.getElementById("extractRules").value = test.extract ? JSON.stringify(test.extract, null, 2) : "";
+            document.getElementById("testAccountId").value = test.accountId || "";
+
+            document.querySelectorAll(".api-item").forEach(el => el.classList.remove("active"));
+            document.querySelector(`[data-test-id="${testId}"]`)?.classList.add("active");
+          }
+        },
+
+        getFormData() {
+          const parseJson = (str) => { try { return str ? JSON.parse(str) : null; } catch { return null; } };
+          const accountId = document.getElementById("testAccountId").value;
+          return {
+            name: document.getElementById("testName").value || "",
+            method: document.getElementById("testMethod").value || "GET",
+            endpoint: document.getElementById("testEndpoint").value || "",
+            headers: parseJson(document.getElementById("testHeaders").value),
+            body: parseJson(document.getElementById("testBody").value),
+            expectedStatus: parseInt(document.getElementById("expectedStatus").value) || 200,
+            extract: parseJson(document.getElementById("extractRules").value),
+            accountId: accountId ? parseInt(accountId) : null
+          };
+        },
+
+        clearForm() {
+          ["testName", "testEndpoint", "testHeaders", "testBody", "extractRules"].forEach(id => {
+            document.getElementById(id).value = "";
+          });
+          document.getElementById("testMethod").value = "POST";
+          document.getElementById("expectedStatus").value = "200";
+          document.getElementById("testAccountId").value = "";
+          this.state.currentCollection = null;
+          this.state.currentTest = null;
+        },
+
+        async runCurrentTest() {
+          const formData = this.getFormData();
+          if (!formData.endpoint) {
+            this.showToast("Endpoint를 입력해주세요", "error");
+            return;
+          }
+
+          this.state.isRunning = true;
+          this.setRunButtonState(true);
+          document.getElementById("welcomeScreen")?.remove();
+
+          try {
+            const result = await this.executeRequest(formData);
+            result.testName = formData.name || `${formData.method} ${formData.endpoint}`;
+            result.accountId = formData.accountId;
+            result.extractedVars = {};
+
+            if (formData.extract && result.responseBody) {
+              // 추출된 변수들을 결과에도 저장
+              for (const [varName, path] of Object.entries(formData.extract)) {
+                const value = this.getValueByPath(result.responseBody, path);
+                if (value !== undefined) {
+                  result.extractedVars[varName] = value;
+                }
+              }
+              this.extractVariables(formData.extract, result.responseBody);
+            }
+
+            result.testPassed = formData.expectedStatus ? result.status === formData.expectedStatus : result.success;
+
+            this.state.results[this.state.currentTest || `single_${Date.now()}`] = result;
+            this.renderResult(result);
+            this.updateStats();
+
+            this.showToast(result.testPassed ? "테스트 성공" : "테스트 실패", result.testPassed ? "success" : "error");
+          } catch (error) {
+            this.showToast(`오류: ${error.message}`, "error");
+          }
+
+          this.state.isRunning = false;
+          this.setRunButtonState(false);
+        },
+
+        async runAllTests() {
+          const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          if (!collections.length) {
+            this.showToast("테스트할 컬렉션이 없습니다", "error");
+            return;
+          }
+
+          this.state.isRunning = true;
+          this.state.results = {};
+          this.setRunButtonState(true);
+          this.clearResults();
+          Variables.clear();
+
+          const progressBar = document.getElementById("progressBar");
+          const progressFill = document.getElementById("progressFill");
+          progressBar.classList.add("active");
+
+          const allTests = collections.flatMap(col => (col.tests || []).map(t => ({ ...t, collectionId: col.id })));
+          let completed = 0;
+
+          for (const test of allTests) {
+            progressFill.style.width = `${((completed + 1) / allTests.length) * 100}%`;
+
+            const result = await this.executeRequest(test);
+            result.testName = test.name;
+            result.testId = test.id;
+            result.accountId = test.accountId;
+            result.extractedVars = {};
+
+            if (test.extract && result.responseBody) {
+              // 추출된 변수들을 결과에도 저장
+              for (const [varName, path] of Object.entries(test.extract)) {
+                const value = this.getValueByPath(result.responseBody, path);
+                if (value !== undefined) {
+                  result.extractedVars[varName] = value;
+                }
+              }
+              this.extractVariables(test.extract, result.responseBody);
+            }
+
+            result.testPassed = test.expectedStatus ? result.status === test.expectedStatus : result.success;
+
+            this.state.results[test.id] = result;
+            this.renderResult(result);
+            this.updateStats();
+            this.render();
+
+            completed++;
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          this.renderSummary();
+          progressBar.classList.remove("active");
+          this.state.isRunning = false;
+          this.setRunButtonState(false);
+          this.showToast("전체 테스트 완료");
+        },
+
+        setRunButtonState(running) {
+          const btn = document.getElementById("runBtn");
+          const runAllBtn = document.getElementById("runAllBtn");
+          if (btn) {
+            btn.disabled = running;
+            btn.innerHTML = running ? '<span class="spinner"></span> 실행 중...' : '▶ 테스트 실행';
+          }
+          if (runAllBtn) {
+            runAllBtn.disabled = running;
+            runAllBtn.innerHTML = running ? '<span class="spinner"></span> 실행 중...' : '▶ 전체 실행';
+          }
+        },
+
+        async executeRequest(test) {
+          const baseUrl = Variables.get("BASE_URL") || document.getElementById("baseUrl").value;
+          const url = test.endpoint.startsWith("http") ? test.endpoint : `${baseUrl}${Variables.interpolate(test.endpoint)}`;
+
+          const headers = { "Content-Type": "application/json" };
+          if (test.headers) {
+            Object.entries(test.headers).forEach(([k, v]) => headers[k] = Variables.interpolate(v));
+          }
+
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          if (test.accountId && accounts[test.accountId]?.token) {
+            headers["Authorization"] = `Bearer ${accounts[test.accountId].token}`;
+          }
+
+          let body = null;
+          if (test.body && !["GET", "HEAD"].includes(test.method)) {
+            body = JSON.stringify(Variables.interpolateObject(test.body));
+          }
+
+          const result = { url, method: test.method, requestHeaders: headers, requestBody: test.body, status: null, duration: 0, success: false, error: null };
+          const startTime = performance.now();
+
+          try {
+            const response = await fetch(url, { method: test.method, headers, body });
+            result.duration = Math.round(performance.now() - startTime);
+            result.status = response.status;
+            result.responseHeaders = {};
+            response.headers.forEach((v, k) => result.responseHeaders[k] = v);
+
+            const contentType = response.headers.get("content-type");
+            result.responseBody = contentType?.includes("application/json") ? await response.json() : await response.text();
+            result.success = response.ok;
+          } catch (error) {
+            result.duration = Math.round(performance.now() - startTime);
+            result.error = error.message;
+          }
+
+          return result;
+        },
+
+        extractVariables(rules, data) {
+          for (const [varName, path] of Object.entries(rules)) {
+            const value = this.getValueByPath(data, path);
+            if (value !== undefined) {
+              Variables.set(varName, value);
+              this.showToast(`변수 추출: ${varName} = ${JSON.stringify(value).substring(0, 30)}`, "success");
+            }
+          }
+          this.renderVariables();
+        },
+
+        renderVariables() {
+          const container = document.getElementById("variablesList");
+          const row = document.getElementById("variablesRow");
+          const vars = Variables.runtime;
+          const keys = Object.keys(vars);
+
+          if (keys.length === 0) {
+            row.style.display = "none";
+            return;
+          }
+
+          row.style.display = "flex";
+          container.innerHTML = keys.map(key => {
+            const value = vars[key];
+            const displayValue = typeof value === 'string' ? value : JSON.stringify(value);
+            const shortValue = displayValue.length > 20 ? displayValue.substring(0, 20) + '...' : displayValue;
+            return `<code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; margin-right: 8px;">
+              <span style="color: var(--accent);">{{${this.escapeHtml(key)}}}</span> = ${this.escapeHtml(shortValue)}
+            </code>`;
+          }).join('');
+        },
+
+        clearVariables() {
+          Variables.clear();
+          this.renderVariables();
+          this.showToast("변수가 초기화되었습니다");
+        },
+
+        getValueByPath(obj, path) {
+          const parts = path.replace(/^\$\.?/, "").split(".");
+          let current = obj;
+          for (const part of parts) {
+            if (current === null || current === undefined) return undefined;
+            const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
+            if (arrayMatch) {
+              current = current[arrayMatch[1]];
+              if (Array.isArray(current)) current = current[parseInt(arrayMatch[2])];
+            } else {
+              current = current[part];
+            }
+          }
+          return current;
+        },
+
+        renderResult(result) {
+          const container = document.getElementById("resultPanel");
+          document.getElementById("welcomeScreen")?.remove();
+
+          const statusClass = this.getStatusBadgeClass(result.status);
+          const statusText = result.error ? "ERR" : result.status || "-";
+
+          // 사용된 계정 정보 조회
+          let accountLabel = "";
+          if (result.accountId) {
+            const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+            const account = accounts[result.accountId];
+            if (account) {
+              accountLabel = `<span class="account-tag">${this.escapeHtml(account.name || '계정' + result.accountId)}</span>`;
+            }
+          }
+
+          const card = document.createElement("div");
+          card.className = "result-card";
+          card.innerHTML = `
+            <div class="result-header" onclick="this.nextElementSibling.classList.toggle('open')">
+              <span class="method-badge method-${result.method}">${result.method}</span>
+              <span class="name">${this.escapeHtml(result.testName || "")}</span>
+              ${accountLabel}
+              <span class="path">${this.escapeHtml(result.url || "")}</span>
+              <span class="status-badge ${statusClass}">${statusText}</span>
+              <span class="time">${result.duration}ms</span>
+            </div>
+            <div class="result-body">
+              <div class="result-section">
+                <div class="result-section-title">URL</div>
+                <pre>${this.escapeHtml(result.url || "")}</pre>
+              </div>
+              ${result.requestBody ? `
+                <div class="result-section">
+                  <div class="result-section-title">Request Body</div>
+                  <pre>${this.formatJson(result.requestBody)}</pre>
+                </div>
+              ` : ""}
+              <div class="result-section">
+                <div class="result-section-title">Response ${result.status ? `(${result.status})` : ""}</div>
+                <pre>${result.error ? this.escapeHtml(result.error) : this.formatJson(result.responseBody)}</pre>
+              </div>
+              ${result.extractedVars && Object.keys(result.extractedVars).length > 0 ? `
+                <div class="result-section">
+                  <div class="result-section-title">추출된 변수</div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${Object.entries(result.extractedVars).map(([key, value]) => `
+                      <code style="background: var(--accent-bg); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                        {{${this.escapeHtml(key)}}} = ${this.escapeHtml(JSON.stringify(value).substring(0, 50))}
+                      </code>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ""}
+            </div>
+          `;
+
+          container.insertBefore(card, container.firstChild);
+        },
+
+        renderSummary() {
+          const results = Object.values(this.state.results);
+          const container = document.getElementById("resultPanel");
+
+          const summary = document.createElement("div");
+          summary.className = "summary-card";
+          summary.innerHTML = `
+            <div class="summary-stat"><div class="num">${results.length}</div><div class="label">전체</div></div>
+            <div class="summary-divider"></div>
+            <div class="summary-stat"><div class="num green">${results.filter(r => r.testPassed).length}</div><div class="label">성공</div></div>
+            <div class="summary-divider"></div>
+            <div class="summary-stat"><div class="num red">${results.filter(r => !r.testPassed).length}</div><div class="label">실패</div></div>
+            <div class="summary-divider"></div>
+            <div class="summary-stat"><div class="num">${results.reduce((s, r) => s + r.duration, 0)}ms</div><div class="label">소요시간</div></div>
+          `;
+
+          container.insertBefore(summary, container.firstChild);
+        },
+
+        getStatusBadgeClass(status) {
+          if (!status) return "status-err";
+          if (status >= 200 && status < 300) return "status-2xx";
+          if (status >= 400 && status < 500) return "status-4xx";
+          return "status-5xx";
+        },
+
+        clearResults() {
+          document.getElementById("resultPanel").innerHTML = `
+            <div class="welcome" id="welcomeScreen">
+              <div class="icon">⚡</div>
+              <h2>API Tester</h2>
+              <p>테스트를 작성하고 실행하세요.</p>
+            </div>
+          `;
+        },
+
+        // ==================== Collection Operations ====================
+        createCollection() {
+          const name = prompt("컬렉션 이름을 입력하세요:");
+          if (!name) return;
+
+          const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          collections.push({ id: `col_${Date.now()}`, name, tests: [], createdAt: new Date().toISOString() });
+          Storage.save(STORAGE_KEYS.COLLECTIONS, collections);
+
+          this.render();
+          this.showToast("컬렉션이 생성되었습니다");
+        },
+
+        saveTestToCollection() {
+          const formData = this.getFormData();
+          if (!formData.endpoint) {
+            this.showToast("Endpoint를 입력해주세요", "error");
+            return;
+          }
+
+          let collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+          if (!collections.length) {
+            collections.push({ id: `col_${Date.now()}`, name: "My Collection", tests: [] });
+          }
+
+          const collectionId = this.state.currentCollection || collections[0].id;
+          const collection = collections.find(c => c.id === collectionId);
+
+          if (this.state.currentTest) {
+            const testIndex = collection.tests.findIndex(t => t.id === this.state.currentTest);
+            if (testIndex !== -1) {
+              collection.tests[testIndex] = { ...collection.tests[testIndex], ...formData };
+              this.showToast("테스트가 업데이트되었습니다");
+            }
+          } else {
+            formData.id = `test_${Date.now()}`;
+            formData.name = formData.name || `${formData.method} ${formData.endpoint}`;
+            collection.tests.push(formData);
+            this.showToast("테스트가 저장되었습니다");
+          }
+
+          Storage.save(STORAGE_KEYS.COLLECTIONS, collections);
+          this.render();
+        },
+
+        importCollection() {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = ".json";
+
+          input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+              const text = await file.text();
+              const imported = JSON.parse(text);
+              imported.id = `col_${Date.now()}`;
+              imported.importedAt = new Date().toISOString();
+
+              const collections = Storage.load(STORAGE_KEYS.COLLECTIONS, []);
+              collections.push(imported);
+              Storage.save(STORAGE_KEYS.COLLECTIONS, collections);
+
+              this.render();
+              this.showToast("컬렉션을 가져왔습니다");
+            } catch (error) {
+              this.showToast("잘못된 파일 형식입니다", "error");
+            }
+          };
+
+          input.click();
+        },
+
+        clearAll() {
+          if (!confirm("모든 결과를 초기화하시겠습니까?")) return;
+          this.state.results = {};
+          Variables.clear();
+          this.clearResults();
+          this.updateStats();
+          this.renderVariables();
+          this.render();
+          this.showToast("초기화되었습니다");
+        },
+
+        // ==================== Account Operations ====================
+        async addAccount() {
+          const name = document.getElementById("newAccountName").value.trim();
+          const email = document.getElementById("newAccountEmail").value.trim();
+          const password = document.getElementById("newAccountPassword").value;
+
+          if (!email || !password) {
+            this.showToast("이메일과 비밀번호를 입력해주세요", "error");
+            return;
+          }
+
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const newId = Math.max(0, ...Object.keys(accounts).map(Number)) + 1;
+
+          const newAccount = {
+            id: newId,
+            name: name || `계정${newId}`,
+            email,
+            password,
+            token: "",
+            pk: null
+          };
+
+          accounts[newId] = newAccount;
+          Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+
+          // 입력 필드 초기화
+          document.getElementById("newAccountName").value = "";
+          document.getElementById("newAccountEmail").value = "";
+          document.getElementById("newAccountPassword").value = "";
+
+          // 로그인 시도
+          await this.loginAccount(newId);
+
+          this.renderAccountList();
+          this.renderAccountsRow();
+          this.renderAccountSelect();
+        },
+
+        async loginAccount(id) {
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const account = accounts[id];
+
+          if (!account?.email || !account?.password) {
+            this.showToast("계정 정보가 없습니다", "error");
+            return;
+          }
+
+          const baseUrl = Variables.get("BASE_URL") || document.getElementById("baseUrl").value;
+
+          try {
+            const response = await fetch(`${baseUrl}/accounts/login/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: account.email, password: account.password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              accounts[id] = {
+                ...account,
+                token: data.access_token || data.access,
+                refresh: data.refresh_token || data.refresh,
+                pk: data.user?.pk || data.user?.id || data.pk
+              };
+
+              Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+              this.renderAccountList();
+              this.renderAccountsRow();
+              this.renderAccountSelect();
+              this.showToast(`${account.name || '계정' + id} 로그인 성공`);
+            } else {
+              this.showToast(`로그인 실패: ${data.detail || "알 수 없는 오류"}`, "error");
+            }
+          } catch (error) {
+            this.showToast(`로그인 실패: ${error.message}`, "error");
+          }
+        },
+
+        deleteAccount(id) {
+          const accounts = Storage.load(STORAGE_KEYS.ACCOUNTS, {});
+          const account = accounts[id];
+
+          if (!confirm(`"${account?.name || '계정' + id}"을(를) 삭제하시겠습니까?`)) return;
+
+          delete accounts[id];
+          Storage.save(STORAGE_KEYS.ACCOUNTS, accounts);
+
+          this.renderAccountList();
+          this.renderAccountsRow();
+          this.renderAccountSelect();
+          this.showToast("계정이 삭제되었습니다");
+        },
+
+        // ==================== Environment Operations ====================
+        openEnvModal() {
+          this.openModal("envModal");
+          this.renderEnvList();
+        },
+
+        renderEnvList() {
+          const container = document.getElementById("envList");
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } } });
+
+          container.innerHTML = Object.entries(envs).map(([id, env]) => `
+            <div class="env-item">
+              <div class="env-name">${this.escapeHtml(env.name)}</div>
+              <div style="font-size: 11px; color: var(--text-secondary);">
+                ${Object.entries(env.variables).map(([k, v]) => `<div><code>${k}</code>: ${this.escapeHtml(v)}</div>`).join("")}
+              </div>
+              ${id !== "default" ? `<button class="btn btn-danger btn-sm" style="margin-top: 8px" onclick="App.deleteEnv('${id}')">삭제</button>` : ""}
+            </div>
+          `).join("");
+        },
+
+        addEnv() {
+          const name = prompt("환경 이름:");
+          if (!name) return;
+
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, {});
+          envs[`env_${Date.now()}`] = { name, variables: { BASE_URL: "http://localhost:8000" } };
+          Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
+
+          this.renderEnvList();
+          this.loadState();
+          this.showToast("환경이 추가되었습니다");
+        },
+
+        deleteEnv(envId) {
+          if (!confirm("이 환경을 삭제하시겠습니까?")) return;
+
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, {});
+          delete envs[envId];
+          Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
+
+          this.renderEnvList();
+          this.loadState();
+          this.showToast("환경이 삭제되었습니다");
+        },
+
+        // ==================== Utilities ====================
+        escapeHtml(text) {
+          if (typeof text !== "string") return text;
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        },
+
+        formatJson(obj) {
+          if (obj === null || obj === undefined) return "(empty)";
+          if (typeof obj === "string") return this.escapeHtml(obj);
+          try { return this.escapeHtml(JSON.stringify(obj, null, 2)); }
+          catch { return this.escapeHtml(String(obj)); }
+        }
+      };
+
+      // Initialize on DOM load
+      document.addEventListener("DOMContentLoaded", () => App.init());
+
+      // Save baseUrl on change
+      document.getElementById("baseUrl").addEventListener("input", (e) => {
+        Variables.set("BASE_URL", e.target.value);
+        const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: {} } });
+        const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
+        if (envs[config.currentEnv]) {
+          envs[config.currentEnv].variables.BASE_URL = e.target.value;
+          Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
+        }
+      });
+
+      // Close modal on overlay click
+      document.querySelectorAll(".modal-overlay").forEach(overlay => {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) App.closeModal(overlay.id);
+        });
+      });
+
+      // Close modal on ESC
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".modal-overlay.active").forEach(m => m.classList.remove("active"));
+        }
+      });
+    </script>
+  </body>
 </html>

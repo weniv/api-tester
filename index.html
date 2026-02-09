@@ -689,6 +689,11 @@
             <!-- 계정 목록이 동적으로 렌더링됨 -->
           </div>
 
+          <div class="toolbar-row">
+            <span class="env-badge">LOGIN</span>
+            <input type="text" id="loginEndpoint" class="input" style="width: 250px" placeholder="로그인 엔드포인트 (예: /accounts/login/)" value="/accounts/login/" />
+          </div>
+
           <div class="toolbar-row" id="variablesRow" style="display: none;">
             <span class="env-badge">VAR</span>
             <div id="variablesList" class="account-compact" style="font-size: 10px; color: var(--text-secondary);"></div>
@@ -948,7 +953,7 @@
 
             if (!envs || typeof envs !== 'object') {
               Storage.save(STORAGE_KEYS.ENVIRONMENTS, {
-                default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } }
+                default: { name: "Default", variables: { BASE_URL: "http://localhost:8000", LOGIN_ENDPOINT: "/accounts/login/" } }
               });
               return;
             }
@@ -957,17 +962,22 @@
             const migratedEnvs = {};
             for (const [id, env] of Object.entries(envs)) {
               if (!env || typeof env !== 'object') continue;
+              const variables = env.variables && typeof env.variables === 'object'
+                ? { ...env.variables }
+                : { BASE_URL: "http://localhost:8000" };
+              // LOGIN_ENDPOINT가 없으면 기본값 추가
+              if (!variables.LOGIN_ENDPOINT) {
+                variables.LOGIN_ENDPOINT = "/accounts/login/";
+              }
               migratedEnvs[id] = {
                 name: env.name || id,
-                variables: env.variables && typeof env.variables === 'object'
-                  ? env.variables
-                  : { BASE_URL: "http://localhost:8000" }
+                variables
               };
             }
 
             // default 환경이 없으면 추가
             if (!migratedEnvs.default) {
-              migratedEnvs.default = { name: "Default", variables: { BASE_URL: "http://localhost:8000" } };
+              migratedEnvs.default = { name: "Default", variables: { BASE_URL: "http://localhost:8000", LOGIN_ENDPOINT: "/accounts/login/" } };
             }
 
             Storage.save(STORAGE_KEYS.ENVIRONMENTS, migratedEnvs);
@@ -975,7 +985,7 @@
           } catch (e) {
             console.error("Environment migration failed:", e);
             Storage.save(STORAGE_KEYS.ENVIRONMENTS, {
-              default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } }
+              default: { name: "Default", variables: { BASE_URL: "http://localhost:8000", LOGIN_ENDPOINT: "/accounts/login/" } }
             });
           }
         },
@@ -1064,12 +1074,15 @@
           this.renderAccountsRow();
           this.renderAccountSelect();
 
-          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: { BASE_URL: "http://localhost:8000" } } });
+          const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: { BASE_URL: "http://localhost:8000", LOGIN_ENDPOINT: "/accounts/login/" } } });
           const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
 
           const baseUrl = envs[config.currentEnv]?.variables?.BASE_URL || "http://localhost:8000";
+          const loginEndpoint = envs[config.currentEnv]?.variables?.LOGIN_ENDPOINT || "/accounts/login/";
           document.getElementById("baseUrl").value = baseUrl;
+          document.getElementById("loginEndpoint").value = loginEndpoint;
           Variables.set("BASE_URL", baseUrl);
+          Variables.set("LOGIN_ENDPOINT", loginEndpoint);
 
           this.renderEnvSelect(envs, config.currentEnv);
         },
@@ -1210,8 +1223,11 @@
           select.onchange = (e) => {
             Storage.save(STORAGE_KEYS.CONFIG, { currentEnv: e.target.value });
             const baseUrl = envs[e.target.value]?.variables?.BASE_URL || "";
+            const loginEndpoint = envs[e.target.value]?.variables?.LOGIN_ENDPOINT || "/accounts/login/";
             document.getElementById("baseUrl").value = baseUrl;
+            document.getElementById("loginEndpoint").value = loginEndpoint;
             Variables.set("BASE_URL", baseUrl);
+            Variables.set("LOGIN_ENDPOINT", loginEndpoint);
             this.showToast("환경이 변경되었습니다");
           };
         },
@@ -1740,9 +1756,11 @@
           }
 
           const baseUrl = Variables.get("BASE_URL") || document.getElementById("baseUrl").value;
+          const loginEndpoint = document.getElementById("loginEndpoint").value || "/accounts/login/";
+          const loginUrl = loginEndpoint.startsWith("http") ? loginEndpoint : `${baseUrl}${loginEndpoint}`;
 
           try {
-            const response = await fetch(`${baseUrl}/accounts/login/`, {
+            const response = await fetch(loginUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email: account.email, password: account.password })
@@ -1812,7 +1830,7 @@
           if (!name) return;
 
           const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, {});
-          envs[`env_${Date.now()}`] = { name, variables: { BASE_URL: "http://localhost:8000" } };
+          envs[`env_${Date.now()}`] = { name, variables: { BASE_URL: "http://localhost:8000", LOGIN_ENDPOINT: "/accounts/login/" } };
           Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
 
           this.renderEnvList();
@@ -1858,6 +1876,17 @@
         const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
         if (envs[config.currentEnv]) {
           envs[config.currentEnv].variables.BASE_URL = e.target.value;
+          Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
+        }
+      });
+
+      // Save loginEndpoint on change
+      document.getElementById("loginEndpoint").addEventListener("input", (e) => {
+        Variables.set("LOGIN_ENDPOINT", e.target.value);
+        const envs = Storage.load(STORAGE_KEYS.ENVIRONMENTS, { default: { name: "Default", variables: {} } });
+        const config = Storage.load(STORAGE_KEYS.CONFIG, { currentEnv: "default" });
+        if (envs[config.currentEnv]) {
+          envs[config.currentEnv].variables.LOGIN_ENDPOINT = e.target.value;
           Storage.save(STORAGE_KEYS.ENVIRONMENTS, envs);
         }
       });
